@@ -124,7 +124,17 @@
             this.pos = 0;
             super.stop();
         }
-		
+        
+	/* Мут */
+	override public mute(_arg1:Boolean):void
+	{
+		if (this._ready){
+		  _arg1 == true ? this._ytAPI.mute() : this._ytAPI.unMute();
+		   super.mute(_arg1);
+		}
+		//this._ytAPI.isMuted():
+	}
+	
         override public function setVolume(_arg1:Number):void{
             if (this._ready){
                 this._ytAPI.setVolume(Math.min(Math.max(0, _arg1), 100));
