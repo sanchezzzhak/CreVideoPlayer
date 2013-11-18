@@ -65,10 +65,12 @@
 			this._ready = true;
 		}
 		
+		/* Загрузка видео по URL  */
 		override public function load(_url:String):void{
 			this._videoId = this.getID(_url);
 			//this._ytAPI.cueVideoById(this._videoId, 0, "default");
 			this._ytAPI.loadVideoById(this._videoId, 0, "default");
+			
 			
 		}
 		
@@ -90,7 +92,7 @@
             //};
 		}
 		
-		/* Ресайз видео 
+		/* Ресайз видео окна
 		* @var _arg1 ширина 
 		* @var _arg2 высота 	
 		*/
@@ -101,11 +103,12 @@
         }
 		
 		
-		/* позиция в кадре */
+		/* Позиция в кадре */
 		override public function getPosition():Number{
 			return 0;
 		} 
 		
+		/* Перемотка на указаную позицию */
 		override public function seek(_arg1:Number):void{
             if (this._ready){
                 this._ytAPI.seekTo(_arg1, true);
@@ -114,6 +117,8 @@
                 this.play();
             };
         }
+		
+		/* Стоп */
         override public function stop():void{
             if (this._ready){
                 if (this._ytAPI.getPlayerState() > 0){
@@ -125,16 +130,17 @@
             super.stop();
         }
         
-	/* Мут */
-	override public mute(_arg1:Boolean):void
-	{
-		if (this._ready){
-		  _arg1 == true ? this._ytAPI.mute() : this._ytAPI.unMute();
-		   super.mute(_arg1);
+		/* Мут */
+		override public mute(_arg1:Boolean):void
+		{
+			if (this._ready){
+			  _arg1 == true ? this._ytAPI.mute() : this._ytAPI.unMute();
+			   super.mute(_arg1);
+			}
+			//this._ytAPI.isMuted():
 		}
-		//this._ytAPI.isMuted():
-	}
 	
+		/* Установить звук */
         override public function setVolume(_arg1:Number):void{
             if (this._ready){
                 this._ytAPI.setVolume(Math.min(Math.max(0, _arg1), 100));
