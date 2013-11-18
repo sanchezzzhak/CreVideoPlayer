@@ -286,7 +286,7 @@
 				panelMc.volMc.sndOff.visible=true;
 			}
 			
-			this._provider.setValue(newVol);
+			this._provider.setVolume(newVol);
 			
 		}
 		
