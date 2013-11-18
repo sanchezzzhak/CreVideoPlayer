@@ -18,6 +18,7 @@
 	/* Код плеира */
 	public class VideoPlayer extends Sprite
 	{
+		private var _mediaLayer:Sprite;
 		
 		private var _provider:Object; 
 		private var videos:XMLList;
@@ -29,10 +30,14 @@
 		private var slideTimer:Timer;
 		private var nameTimer:Timer;
 		
+		
+		
+		
 		public function VideoPlayer()
 		{
 			Security.allowDomain("*");
-			var xmlLoader:URLLoader=new URLLoader(new URLRequest('videos.xml'));
+			
+			var xmlLoader:URLLoader=new URLLoader(new URLRequest('./videos.xml'));
 			xmlLoader.addEventListener(Event.COMPLETE, xmlLoaded);
 			panelMc.playBtn.visible=true;
 			panelMc.pauseBtn.visible=false;
@@ -43,11 +48,18 @@
 		{
 			var xml:XML=XML(e.target.data);
 			videos=xml.children();
+			//JsAPI.console(videos);
+
 			init();
 		}
 
+
 		private function init():void
 		{
+			
+			this._mediaLayer = new Sprite();
+			addChildAt(this._mediaLayer, 0);
+			
 			
 			time=new Timer(40);
 			time.addEventListener(TimerEvent.TIMER, onTimer);
@@ -84,8 +96,24 @@
 			createVideoBtns();
 			hidePlaylist();
 			
+			
+			
+			
+			
+			
 			playVideo();
+			
+			
 		}
+		
+		  
+		public function destroyChildMediaLayer():void
+		{
+			while (this._mediaLayer.numChildren > 0) {
+				this._mediaLayer.removeChildAt(0);
+			};
+		}
+		
 		
 		private function onOver(e:MouseEvent):void
 		{
@@ -338,11 +366,10 @@
 		
 		private function stopVideo():void
 		{
-			
 			if(this._provider!=null){
 				this._provider.stop();
 			}	
-				
+			this.destroyChildMediaLayer();	
 			time.stop();
 			time.reset();
 			nameTimer.reset();
@@ -501,26 +528,30 @@
 				case 'rtmp':
 					if( (this._provider is RTMPProvider) == false )
 					{
+						this.destroyChildMediaLayer();
 						this._provider = new RTMPProvider;
 						this._provider.vid.name = 'rtmp_obj';
-						addChildAt(this._provider.vid,0);
+						
+						this._mediaLayer.addChildAt(this._provider.vid,0);
 					}
 					break;
 				
 				case 'youtube':
 					if( (this._provider is MediaYouTubeProvider) == false )
 					{	
+						this.destroyChildMediaLayer();
 						this._provider = new MediaYouTubeProvider;
 						this._provider._loader.name = 'youtube_obj';
-						addChildAt(this._provider._loader,0);
+						this._mediaLayer.addChildAt(this._provider._loader,0);
 					}
 					break;
 				case 'video':
 					if( (this._provider is VideoProvider) == false)
 					{	
+						this.destroyChildMediaLayer();
 						this._provider = new VideoProvider;
 						this._provider.vid.name = 'video_obj';
-						addChildAt(this._provider.vid,0);
+						this._mediaLayer.addChildAt(this._provider.vid,0);
 					}
 					break;
 					

@@ -9,7 +9,11 @@
 	
 	import pro.creatida.MediaBase;
 	import pro.creatida.PlayerState;
+	import pro.creatida.NetClient;
 	
+	
+	
+
 
 	public class RTMPProvider extends MediaBase {
 		
@@ -33,18 +37,25 @@
 
 		override public function initProvider():void
 		{
+			this.client = new NetClient(this);
 			
 			this._nc = new NetConnection();
+			this._nc.client  = this.client;
+			
+
             this._nc.addEventListener(NetStatusEvent.NET_STATUS, this.statusHandler);
             this._nc.addEventListener(SecurityErrorEvent.SECURITY_ERROR, this.errorHandler);
             this._nc.addEventListener(IOErrorEvent.IO_ERROR, this.errorHandler);
             this._nc.addEventListener(AsyncErrorEvent.ASYNC_ERROR, this.errorHandler);
             //this._connection.objectEncoding = ObjectEncoding.AMF0;
-            //this._nc.client = new NetClient();
-			
+
 			this._snd = new SoundTransform();
 			this.vid  = new Video();
 		}
+		
+		
+
+		
 		
 		override public function load(_arg1:String):void
 		{
@@ -69,12 +80,10 @@
 		
 		public function setStream():void
 		{
-				this.client.onMetaData = this.onMeta;
-				this._ns = new NetStream(this._nc);
-				this._ns.client = this.client;
-				this._ns.play(this._stream_id);
-				
-				this.vid.attachNetStream(this._ns);
+			this._ns = new NetStream(this._nc);
+			this._ns.client = this.client;
+			this.vid.attachNetStream(this._ns);
+			this._ns.play(this._stream_id);
 		}
 		
 		
@@ -111,11 +120,11 @@
             trace(_arg1.text);
         }
 		
+	
 		
 		
-		
-		
-		public function onMeta(_arg1:Object):void{
+		public function onClientData(_arg1:Object):void{
+			trace(_arg1.type);
             switch (_arg1.type){
                 case "metadata":
                    /* if (!this._metadata){

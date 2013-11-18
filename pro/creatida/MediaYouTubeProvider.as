@@ -18,6 +18,8 @@
 		private var _ytApiUrl:String = "http://www.youtube.com/apiplayer?version=3&modestbranding=1";
 		private var _videoId:String = "";
 		private var _ready:Boolean = false;
+		private var _statusTimer:Timer;
+		
 		
 		private var bytesLodaed:Number;
 		private var bytesTotal:Number;
@@ -40,6 +42,7 @@
 		override public function initProvider():void
 		{
 			
+			
 			this._loader = new Loader();
             this._loader.contentLoaderInfo.addEventListener(Event.COMPLETE, this.apiLoaded);
             this._loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR, this.loadErrorHandler);
@@ -54,24 +57,57 @@
 		private function apiLoaded(_arg1:Event):void{
 			this._ytAPI = this._loader.content;
 			this._ytAPI.addEventListener("onReady", this.apiReady);
+			this._ytAPI.addEventListener("onStateChange", this.onStateChange);
+			
+			this._statusTimer = new Timer(100);
+            this._statusTimer.addEventListener(TimerEvent.TIMER, this.updatePlaybackStatus);
 			
 			//this._ytAPI.addEventListener("onError", this.onPlayerError);
-			//this._ytAPI.addEventListener("onStateChange", this.onStateChange);
 			//this._ytAPI.addEventListener("onPlaybackQualityChange", this.onPlaybackQualityChange);
 		}
 		
+		/*
+			#docs https://developers.google.com/youtube/flash_api_reference?hl=ru#Playback_status
+		*/
+		private function onStateChange(_arg1:Event):void 
+		{
+			switch (Number(Object(_arg1).data)){
+				// стоит или буферит
+				case 0:
+					
+				break;
+				case 1:
+                    super.play();
+                    break;
+                case 2:
+                    super.pause();
+                    break;
+				// Буфер
+                case 3:
+				
+					break;
+			}
+		}
+		
+		/* колбек для получения меты */
+		public function updatePlaybackStatus(_arg1:TimerEvent):void
+		{
+			
+		}
+		
+		
+		
 		/* Видео готово к просмотру  */
-		private function apiReady(_arg1:Event):void{
+		private function apiReady(_arg1:Event):void
+		{
 			this._ready = true;
+			//this._ytAPI.cueVideoById(this._videoId, 0, "default");
+			this._ytAPI.loadVideoById(this._videoId, 0, "default");
 		}
 		
 		/* Загрузка видео по URL  */
 		override public function load(_url:String):void{
 			this._videoId = this.getID(_url);
-			//this._ytAPI.cueVideoById(this._videoId, 0, "default");
-			this._ytAPI.loadVideoById(this._videoId, 0, "default");
-			
-			
 		}
 		
 		/* Плей */
@@ -105,7 +141,7 @@
 		
 		/* Позиция в кадре */
 		override public function getPosition():Number{
-			return 0;
+			return this.pos;
 		} 
 		
 		/* Перемотка на указаную позицию */
@@ -119,19 +155,20 @@
         }
 		
 		/* Стоп */
-        override public function stop():void{
+        override public function stop():void
+		{
             if (this._ready){
                 if (this._ytAPI.getPlayerState() > 0){
                     this._ytAPI.stopVideo();
                 };
             };
-            //this._statusTimer.stop();
+            this._statusTimer.stop();
             this.pos = 0;
             super.stop();
         }
         
 		/* Мут */
-		override public mute(_arg1:Boolean):void
+		override public function mute(_arg1:Boolean):void
 		{
 			if (this._ready){
 			  _arg1 == true ? this._ytAPI.mute() : this._ytAPI.unMute();
@@ -141,11 +178,21 @@
 		}
 	
 		/* Установить звук */
-        override public function setVolume(_arg1:Number):void{
+        override public function setVolume(_arg1:Number):void
+		{
             if (this._ready){
                 this._ytAPI.setVolume(Math.min(Math.max(0, _arg1), 100));
             };
             super.setVolume(_arg1);
+        }
+		
+		public function getVolume(_arg1):Number
+		{
+            var v:Number = 50;
+			if (this._ready){
+                v = this._ytAPI.getVolume();
+            };
+            return v
         }
 		
 		
