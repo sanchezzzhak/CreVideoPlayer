@@ -1,8 +1,5 @@
 ﻿package pro.creatida
 {	
-	import flash.media.Video;
-	
-	
 	public dynamic class NetClient {
 
         private var callback:Object;

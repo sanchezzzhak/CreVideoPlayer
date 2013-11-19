@@ -599,7 +599,10 @@
 		/* callback на ресайз */
 		public function resizeHandler(_arg1:Event)
 		{
-			this._provider.resize(stage.stageWidth,stage.stageHeight);
+			this._mediaLayer.x = 0;
+			this._mediaLayer.width = stage.stageWidth;
+			this._mediaLayer.height = stage.stageHeight;
+			//this._provider.resize(stage.stageWidth,stage.stageHeight);
 		}
 		
 
