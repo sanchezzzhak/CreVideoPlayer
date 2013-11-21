@@ -11,9 +11,6 @@
 	import pro.creatida.PlayerState;
 	import pro.creatida.NetClient;
 	
-	
-	
-
 
 	public class RTMPProvider extends MediaBase {
 		
@@ -25,17 +22,14 @@
 		private var _stream_id:String;
 		private var _host:String;
 		
-		
 		private var client:Object = new Object();
 		private var meta:Object   = null;
 		
-		public var vid:Video;
-		
 		private var _transition:Boolean;    // трансляция? 
 		private var _metadata:Boolean;      // проиницилизирована ли мета?
+		private var _interval:Number;
 		
-		
-		
+		public var vid:Video;
 		
 		public function RTMPProvider():void
 		{
@@ -49,6 +43,7 @@
 			
 			this._nc = new NetConnection();
 			this._nc.client  = this.client;
+			this._nc.client.bufferTime = 2;
             this._nc.addEventListener(NetStatusEvent.NET_STATUS, this.statusHandler);
             this._nc.addEventListener(SecurityErrorEvent.SECURITY_ERROR, this.errorHandler);
             this._nc.addEventListener(IOErrorEvent.IO_ERROR, this.errorHandler);
@@ -57,7 +52,7 @@
 
 			this._snd = new SoundTransform();
 			this.vid  = new Video(320, 240);
-			this.vid.smoothing = true;
+			//this.vid.smoothing = true;
 		}
 		
 		/* загрузим по URL  поток */
@@ -85,15 +80,16 @@
 		
 		public function setStream():void
 		{
+			//if(!this.vid) this.vid = new Video(320,240);
 			this._ns = new NetStream(this._nc);
 			this._ns.addEventListener(NetStatusEvent.NET_STATUS, this.statusHandler);
             this._ns.addEventListener(IOErrorEvent.IO_ERROR, this.errorHandler);
             this._ns.addEventListener(AsyncErrorEvent.ASYNC_ERROR, this.errorHandler);
-			this._ns.client = this.client;
+			this._ns.bufferTime = 2;
 			
+			this._ns.client = this.client;
 			this.vid.attachNetStream(this._ns);
 			this._ns.play(this._stream_id);
-
 		}
 		
 		/* */
@@ -101,6 +97,7 @@
 		{
 			 trace("net status handler: " + _arg1.info.code);
 			 switch (_arg1.info.code){
+				 
                 case "NetConnection.Connect.Success":
 					this.setStream();
                     break;
@@ -116,87 +113,150 @@
                 case "NetStream.Play.UnpublishNotify":
                     this.stop();
                     break;
+				case "NetStream.Buffer.Full":
+					break;
                 case "NetConnection.Connect.Closed":
-                    //if (state == PlayerState.PAUSED){
+                    if (this.state == PlayerState.PAUSED){
                         this.stop();
-                    //};
+                    };
                     break;
             } 
 		}
 	
-		override public function seek(_arg1:Number):void
+		override public function seek(_arg1:Number):void{
+            if (this.meta.duration > 0){
+                if (this.state != PlayerState.PLAYING){
+                    this.play();
+                };
+                this.setState(PlayerState.BUFFERING);
+                this._ns.seek(_arg1);
+                this._transition = false;
+                clearInterval(this._interval);
+                this._interval = setInterval(this.onInterval, 100);
+            };
+        }
+		
+
+		public function onInterval():void 
 		{
-			
-		} 
+
+		}
 		
 		
 		override public function play():void
 		{
-			
+			if (this._metadata)
+			{
+                if (this.meta.duration > 0)
+				{
+                    this._ns.resume();
+                } 
+				else
+				{
+                    this._ns.play(this._stream_id);
+                    setState(PlayerState.BUFFERING);
+                };
+            }
+			else 
+			{
+                this._ns.play(this._stream_id);
+            };
+			clearInterval(this._interval);
+            this._interval = setInterval(this.onInterval, 100);
+		}
+
+		/** Пауза **/
+		override public function pause():void {
+			if (this._ns){
+                if (this.meta.duration > 0){
+                    this._ns.pause();
+                } else {
+                    this._ns.close();
+                };
+            };
+            clearInterval(this._interval);
+			setState(PlayerState.PAUSED);
 		}
 		
-		override public function pause():void {
-			
-		} 
-		
 		override public function stop():void {
-			
+			if ((this._ns.client)){
+                this._ns.close();
+            };
+			this._metadata = false;
+			this._nc.close();
+			super.stop();
 		} 
 		
+		
+		public function getSoundVolume():Number
+		{
+			return this._snd.volume;
+		}
+		
+		override public function setVolume(_arg1:Number):void{
+			trace(_arg1);
+			this._snd.volume = _arg1;
+            if (this._ns){
+                this._ns.soundTransform = this._snd;
+            };
+            super.setVolume(_arg1);
+        }
+		
+		/* мут */
+		override public function mute(_arg1:Boolean):void
+		{
+			(_arg1==true) ? this.setVolume(0) : this.setVolume(1);
+			super.mute(_arg1);
+		}
 		
 		public function errorHandler(_arg1:ErrorEvent):void
 		{
             trace(_arg1.text);
         }
 		
-	
-		
-		
 		public function onClientData(_arg1:Object):void{
-			trace(_arg1.type);
             switch (_arg1.type){
                 case "metadata":
                     if (!this._metadata){
                         this._metadata = true;
                         if (_arg1.duration){
-                            meta.duration = _arg1.duration;
-							// начинать трансляцию с поз...
-                            if (false){
-                                this.seek(0);
-                            };
+                            this.meta.duration = _arg1.duration;
+                            if (this.pos){
+                                this.seek(this.pos);
+                            }
 							
                         };
                         if (_arg1.width){
-                            this.vid.width = _arg1.width;
-                            this.vid.height = _arg1.height;
-                            //this.resize(_config.width, _config.height);
+                            this.resize(_arg1.width, _arg1.height);
                         };
-                        _arg1.provider = "rtmp";
+                        //_arg1.provider = "rtmp";
                     };
                     break;
                 case "fcsubscribe":
-                    //this.setStream();
+                    this.setStream();
                     break;
                 case "textdata":
-                    _arg1.provider = "rtmp";
+                   // _arg1.provider = "rtmp";
+                   
                     break;
                 case "transition":
                     this._transition = false;
                     break;
                 case "complete":
-                   /* if (state != PlayerState.IDLE){
+					/*
+                    if (this.state != PlayerState.IDLE){
                         this.stop();
                     };
-				   */
+					*/
                     break;
             };
-			trace(_arg1);
         }
+
 		
 		/* ресайз размера видео */
 		public function resize(_arg1:Number, _arg2:Number):void{
-			this.vid.width = _arg1;
-            this.vid.height=_arg2;
+			this.vid.width  = _arg1;
+            this.vid.height = _arg2;
 		}
 		
 		

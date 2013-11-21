@@ -32,7 +32,6 @@
 		
 		
 		
-		
 		public function VideoPlayer()
 		{
 			Security.allowDomain("*");
@@ -49,15 +48,21 @@
 			var xml:XML=XML(e.target.data);
 			videos=xml.children();
 			//JsAPI.console(videos);
-
 			init();
 		}
 
 
 		private function init():void
 		{
-			
+
 			this._mediaLayer = new Sprite();
+			
+			
+			
+			stage.scaleMode = StageScaleMode.NO_SCALE;
+			stage.align =  StageAlign.TOP_LEFT;
+			
+			
 			addChildAt(this._mediaLayer, 0);
 			
 			
@@ -95,18 +100,9 @@
 			
 			createVideoBtns();
 			hidePlaylist();
-			
-			
-			
-			
-			
-			
 			playVideo();
-			
-			
 		}
-		
-		  
+
 		public function destroyChildMediaLayer():void
 		{
 			while (this._mediaLayer.numChildren > 0) {
@@ -602,7 +598,7 @@
 			this._mediaLayer.x = 0;
 			this._mediaLayer.width = stage.stageWidth;
 			this._mediaLayer.height = stage.stageHeight;
-			//this._provider.resize(stage.stageWidth,stage.stageHeight);
+			this._provider.resize(stage.stageWidth, stage.stageHeight);
 		}
 		
 

@@ -5,12 +5,14 @@ package pro.creatida {
 	import flash.events.*;
 	import flash.net.*;
 	import flash.media.*;
-	import flash.utils.*;	
+	import flash.utils.*;
 	
 	/* Базовая модель */
 	public class MediaBase extends Sprite{
 		
 		public var name_provider:String;                 // Имя провайдера
+		public var state:String;                         // Состояние плеира
+		public var pos:Number = 0;                           // Начало позиции 
 		
 		public function MediaBase(provider:String):void
 		{
@@ -18,6 +20,12 @@ package pro.creatida {
 			this.initProvider();
 		}
 		
+		public function setState(_arg1:String):void
+		{
+			this.state = _arg1;
+		}
+		
+
 		public function get provider():String
 		{
 			return (this.name_provider);
@@ -36,7 +44,7 @@ package pro.creatida {
 		public function setVolume(_arg1:Number):void{}
 		public function seek(arg1:Number):void{}
 		public function mute(arg1:Boolean):void{}
-		public function getPosition():Number{ return 0;} 
+		public function getPosition():Number{ return this.pos;} 
 		
 
 	}

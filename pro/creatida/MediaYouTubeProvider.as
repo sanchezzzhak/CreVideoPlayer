@@ -25,8 +25,6 @@
 		private var bytesTotal:Number;
 		private var bytesOffset:Number;
 		
-		
-		public var pos:Number   = 0;                   // Видео позиция 
 		public var meta:Object  = null;
 		
         public var _ytAPI:Object;

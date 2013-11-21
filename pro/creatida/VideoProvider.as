@@ -20,7 +20,6 @@
 		
 		public var vid:Video;				   // Видео
 		public var snd:SoundTransform;         // Звук
-		public var pos:Number = 0;             // Видео позиция 
 		
 		
 		public function VideoProvider():void
@@ -55,12 +54,7 @@
 			this.ns.soundTransform = this.snd;
 		}
 		
-		/* Звук +/- */
-		override public function setVolume(_arg1:Number):void
-		{
-			this.snd.volume=  Math.min(Math.max(0, _arg1), 100);
-			this.ns.soundTransform= this.snd;
-		}
+
 		
 		/* Стоп */
 		override public function stop():void
@@ -99,6 +93,13 @@
 		public function onMeta(obj:Object):void
 		{
 			this.meta=obj;
+		}
+		
+		/* Звук +/- */
+		override public function setVolume(_arg1:Number):void
+		{
+			this.snd.volume=  Math.min(Math.max(0, _arg1), 100);
+			this.ns.soundTransform= this.snd;
 		}
 		
 		public function getSoundVolume():Number
