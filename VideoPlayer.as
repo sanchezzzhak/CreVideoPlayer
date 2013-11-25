@@ -6,66 +6,187 @@
 	import flash.net.*;
 	import flash.media.*;
 	import flash.utils.*;
-
-	import com.greensock.*;
-	
+	import flash.xml.*;
 	import fl.transitions.Tween;
 	import fl.transitions.TweenEvent;
 	import flash.sampler.Sample;
 	
+	import flash.geom.Rectangle;
+	import com.greensock.*;
 	import pro.creatida.*;
 
 	/* Код плеира */
 	public class VideoPlayer extends Sprite
 	{
-		private var _mediaLayer:Sprite;
-		
-		private var _provider:Object; 
-		private var videos:XMLList;
-		private var currentVideo:uint=0;
-		
 
+		private var _mediaLayer:Sprite;
+		private var _provider:Object; 
+		
 		private var meta = null;
 		private var time:Timer;
 		private var slideTimer:Timer;
 		private var nameTimer:Timer;
 		
+		private var autoPlay:Number = 0;
+		private var tvMode:TvMode;
+		private var playList:PlayList;
+		
 		
 		
 		public function VideoPlayer()
 		{
-			Security.allowDomain("*");
+			Security.allowDomain('*');
+			this.playList = new PlayList;
 			
-			var xmlLoader:URLLoader=new URLLoader(new URLRequest('./videos.xml'));
-			xmlLoader.addEventListener(Event.COMPLETE, xmlLoaded);
+			
+			
+			var url:String = './videos.xml';
+			if(stage.loaderInfo.parameters.hasOwnProperty('file'))
+			{
+				url = root.loaderInfo.parameters.file;
+				if(root.loaderInfo.parameters.hasOwnProperty('autoplay'))
+				{
+					this.autoPlay = parseInt(root.loaderInfo.parameters.autoplay);
+				}
+			}
+			var playItem:PlaylistItem = new PlaylistItem;
+			var extension:String = url.substring(url.lastIndexOf(".")+1, url.length);
+			switch(extension)
+			{
+				case 'xml':
+						var xmlLoader:URLLoader=new URLLoader(new URLRequest(url));
+						xmlLoader.addEventListener(Event.COMPLETE, this.xmlLoadPlayList);
+					break;
+				case 'flv':
+				case 'mp4':
+						playItem.file  = url;
+						this.playList.insert(playItem);
+					break;
+			};
 			panelMc.playBtn.visible=true;
 			panelMc.pauseBtn.visible=false;
 			
 		}
-		
-		public function xmlLoaded(e:Event):void
+				
+		/* Загрузка PlayList */
+		public function xmlLoadPlayList(e:Event):void
 		{
+
 			var xml:XML=XML(e.target.data);
-			videos=xml.children();
-			//JsAPI.console(videos);
+		
+			var videos:XMLList = xml.videos.children();
+			for each (var item in videos) 
+			{ 
+				var playItem:PlaylistItem = new PlaylistItem;
+				playItem.file  = item.@url;
+				playItem.title = item.@name;
+				// для тв режима...
+				if(item.@time.length() > 0)
+				{
+					playItem.time = item.@time;
+					playItem.date = item.@date;	
+				}
+				this.playList.insert( playItem);
+			} 
+			// TV Режим..
+			if(xml.hasOwnProperty('server'))
+			{
+				this.tvMode = new TvMode;
+				this.tvMode.setDateTime(
+					xml.server.datetime.@year,(parseInt(xml.server.datetime.@month) -1),xml.server.datetime.@day,
+					xml.server.datetime.@hour,xml.server.datetime.@minute , xml.server.datetime.@second
+				);
+				this.tvMode.addEventListener( TvMode.TvModeCheck, tvModeCheck);
+				dispatchEvent(new Event(TvMode.TvModeCheck));
+				
+			}
 			init();
 		}
 
+		public function tvModeCheck(e:Event):void
+		{
+			
+			var serDate:Date = this.tvMode.getServerDate();
+			
+			var endDate:Date  = new Date;
+			var nextDate:Date  = new Date;
+			
+			var playItem:PlaylistItem;
+			var nextItem:PlaylistItem;
+			
+			var arrDate:Array;
+			var arrTime:Array;
+			
+			for each (var item:PlaylistItem in this.playList.list)
+			{
+				arrDate = item.date.split('-');
+				arrTime = item.time.split(':');
+				endDate.setFullYear(arrDate[0], parseInt(arrDate[1])-1, arrDate[2]);
+				endDate.setHours(arrTime[0],arrTime[1],0);
+				
+				nextItem = this.playList.getItemAt( item.index+1 );
+				if(nextItem!=null)
+				{
+					arrDate = nextItem.date.split('-');
+					arrTime = nextItem.time.split(':');
+					nextDate.setFullYear(arrDate[0], parseInt(arrDate[1])-1, arrDate[2]);
+					nextDate.setHours(arrTime[0],arrTime[1],0);	
+					if(serDate.getTime() >= endDate.getTime() && serDate.getTime() < nextDate.getTime())
+					{
+						playItem = item;	
+					}
+				}
+				else if(serDate.getTime() >= endDate.getTime())
+				{
+					playItem = item;
+				}
+				
+			}
+			
+			if(playItem.index != this.playList.index)
+			{
+				/* проверяем разницу по времени на сколько опоздал */
+				arrDate = playItem.date.split('-');
+				arrTime = playItem.time.split(':');
+				endDate.setFullYear(arrDate[0], parseInt(arrDate[1])-1, arrDate[2]);
+				endDate.setHours(arrTime[0],arrTime[1],0);
+				var offset:uint = (( serDate.getTime() - endDate.getTime() ) /1000) /60;
+				if(offset >0)
+				{
+					this.playList.list[playItem.index].start = offset;
+				}
 
+				this.playList.index = playItem.index;
+				this.stopVideo();
+				this.playVideo();
+			} 
+		}
+		
+		
+		/* Получить текущий итем, который проигрывается */
+		public function currentPlayItem():PlaylistItem
+		{
+			arguments;
+			return this.playList.currentPlayItem();
+		}
+		
+		/* Получить плайлист */
+		public function getPlayList():PlayList
+		{
+			return this.playList;
+		}
+		
 		private function init():void
 		{
-
-			this._mediaLayer = new Sprite();
+			this._mediaLayer = new Sprite()
 			
-			
+			this._mediaLayer.x = 0;
+			this._mediaLayer.y = 0;
 			
 			stage.scaleMode = StageScaleMode.NO_SCALE;
 			stage.align =  StageAlign.TOP_LEFT;
 			
-			
 			addChildAt(this._mediaLayer, 0);
-			
-			
 			time=new Timer(40);
 			time.addEventListener(TimerEvent.TIMER, onTimer);
 			
@@ -94,15 +215,17 @@
 			stage.addEventListener(MouseEvent.MOUSE_MOVE, onOver);
 			stage.addEventListener(Event.RESIZE, resizeHandler);
 			
-			
+
 			panelMc.volSlider.visible=false;
 			panelMc.volMc.sndOff.visible=false;
+			
 			
 			createVideoBtns();
 			hidePlaylist();
 			playVideo();
 		}
 
+		/* Уничтожитель слоев для провайдеров */
 		public function destroyChildMediaLayer():void
 		{
 			while (this._mediaLayer.numChildren > 0) {
@@ -121,6 +244,7 @@
 			}
 		}
 		
+		
 		private function onOut(e:Event):void
 		{
 			if(panelMc.y==465)
@@ -131,19 +255,18 @@
 			}
 		}
 		
+		/* Создаем playlist виджет */
 		private function createVideoBtns():void
 		{
 			var btn:MovieClip;
-			
-			for(var i:uint=0;i<videos.length();i++)
+			for(var i:uint=0, u:uint=this.playList.list.length; i<u ;i++)
 			{
 				btn=new PlaylistVideo();
-				btn.nameTxt.text=videos[i].@name;
+				btn.nameTxt.text= this.playList.list[i].title;
 				btn.y=i*34;
 				btn.id=i;
 				btn.invBtn.addEventListener(MouseEvent.CLICK, onClickVideo);
-				panelMc.playlistMc.videoContainer.addChild(btn);
-				
+				panelMc.playlistMc.videoContainer.addChild(btn);	
 			}
 			
 			panelMc.playlistMc.scrollerMc.scroller.addEventListener(MouseEvent.MOUSE_DOWN, startScroll);
@@ -166,7 +289,6 @@
 				newPos=67.5;
 			
 			panelMc.playlistMc.scrollerMc.scroller.y=newPos;
-			
 			panelMc.playlistMc.videoContainer.y=-87+((newPos+67.5)/(-135)*(panelMc.playlistMc.videoContainer.height-170));
 		}
 		
@@ -176,26 +298,28 @@
 			stage.removeEventListener(MouseEvent.MOUSE_UP, stopScroll);
 		}
 		
+		/* Клик по списку в playlist */
 		private function onClickVideo(e:MouseEvent):void
 		{
 			var mc:MovieClip=MovieClip(e.currentTarget.parent);
-			
-			currentVideo=mc.id;
+			this.playList.index=mc.id;
 			stopVideo();
 			playVideo();
-			
 			hidePlaylist();
 		}
+		
 		
 		private function showPlaylist(e:MouseEvent=null):void
 		{
 			panelMc.playlistMc.visible=true;
 		}
 		
+		
 		private function hidePlaylist(e:MouseEvent=null):void
 		{
 			panelMc.playlistMc.visible=false;
 		}
+		
 		
 		private function onClick(e:MouseEvent):void
 		{
@@ -310,40 +434,39 @@
 				panelMc.volMc.sndOff.visible=true;
 			}
 			
-			this._provider.setVolume(newVol);
-			
+			this._provider.setVolume(newVol);	
 		}
+		
 		
 		private function changeVol(mute:Boolean=false):void
 		{
 			if(this._provider.getSoundVolume()>0)
 			{
 				panelMc.volSlider.slider.y=30;
-				//snd.volume=0;
 				this._provider.mute(true)
 				panelMc.volMc.sndOff.visible=true;
 			}else
 			{
 				panelMc.volSlider.slider.y=-30;
-				//snd.volume=1;
 				this._provider.mute(false)
 				panelMc.volMc.sndOff.visible=false;
 			}
 			//ns.soundTransform=snd;
 		}
 		
+		
 		private function onTimer(e:TimerEvent):void
 		{
 			switch(e.currentTarget)
 			{
 				case time:
-					onChangeTime();  // отрисовка ползунка 
+					onChangeTime();
 					break;
 				case slideTimer:
-					TweenLite.to(panelMc.volSlider, 0.5, {alpha:0, onComplete:function()
-														{
-															panelMc.volSlider.visible=false;
-														}});
+					TweenLite.to(panelMc.volSlider, 0.5,{alpha:0, onComplete:function(){
+						panelMc.volSlider.visible=false;
+					}});
+					
 					panelMc.volSlider.slider.removeEventListener(MouseEvent.CLICK, slideDown);
 					break;
 				case nameTimer:
@@ -354,18 +477,27 @@
 		
 		private function pauseVideo():void
 		{
-			this._provider.pause();
+			if(this._provider!=null)
+			{
+				this._provider.pause();
+				
+			}
 			time.stop();
 			panelMc.playBtn.visible=true;
 			panelMc.pauseBtn.visible=false;
 		}
 		
+		/* стоп видос */
 		private function stopVideo():void
 		{
-			if(this._provider!=null){
+			if(this._provider!=null)
+			{
 				this._provider.stop();
+				this._provider = null;
 			}	
-			this.destroyChildMediaLayer();	
+			
+			this.destroyChildMediaLayer();
+			
 			time.stop();
 			time.reset();
 			nameTimer.reset();
@@ -379,14 +511,16 @@
 			panelMc.progressMc.invMc.width=0;
 		}
 		
+		/* Ролик назад */
 		private function prevVideo():void
 		{
-			if(currentVideo>0)
+			arguments; // add hak fix
+			if(this.playList.index >0)
 			{
-				currentVideo--;
+				this.playList.index--;
 			}else
 			{
-				currentVideo=videos.length()-1;
+				this.playList.index = playList.list.length-1;
 			}
 			nameTimer.reset();
 			nameTimer.stop();
@@ -395,14 +529,16 @@
 			playVideo();
 		}
 		
+		/* Ролик вперед */
 		private function nextVideo():void
 		{
-			if(currentVideo<videos.length()-1)
+			arguments; // add hak fix
+			if( this.playList.list.length -1)
 			{
-				currentVideo++;
+				this.playList.index++;
 			}else
 			{
-				currentVideo=0;
+				this.playList.index=0;
 			}
 			nameTimer.reset();
 			nameTimer.stop();
@@ -410,6 +546,7 @@
 			stopVideo();
 			playVideo();
 		}
+		
 		
 		private function onChangeTime():void
 		{
@@ -497,7 +634,6 @@
 		
 		public function getInitProvider(url):void
 		{
-			
 			var _name:String;
 			var reg_domain:RegExp = /(www\.)?(?P<domain>.*)\./x
 			var url_data:Array = this.parseUrl(url);
@@ -518,27 +654,29 @@
 					_name = 'video';
 				}
 			}
+			// is instance to stop...
+			if(this._provider!=null)
+			{
+				this._provider.stop();
+			}
 			
 			switch(_name)
 			{
 				case 'rtmp':
-					if( (this._provider is RTMPProvider) == false )
+					if( (this._provider is RTMPProvider) == false)
 					{
 						this.destroyChildMediaLayer();
 						this._provider = new RTMPProvider;
-						this._provider.vid.name = 'rtmp_obj';
-						
-						this._mediaLayer.addChildAt(this._provider.vid,0);
+						this._mediaLayer.addChildAt(this._provider.display(),0);
 					}
 					break;
 				
 				case 'youtube':
-					if( (this._provider is MediaYouTubeProvider) == false )
+					if( (this._provider is MediaYouTubeProvider) == false  )
 					{	
 						this.destroyChildMediaLayer();
 						this._provider = new MediaYouTubeProvider;
-						this._provider._loader.name = 'youtube_obj';
-						this._mediaLayer.addChildAt(this._provider._loader,0);
+						this._mediaLayer.addChildAt(this._provider.display(),0);
 					}
 					break;
 				case 'video':
@@ -546,8 +684,7 @@
 					{	
 						this.destroyChildMediaLayer();
 						this._provider = new VideoProvider;
-						this._provider.vid.name = 'video_obj';
-						this._mediaLayer.addChildAt(this._provider.vid,0);
+						this._mediaLayer.addChildAt(this._provider.display(),0);
 					}
 					break;
 					
@@ -561,35 +698,37 @@
 		private function playVideo():void
 		{
 
+			
 			panelMc.progressMc.invMc.removeEventListener(MouseEvent.CLICK, changePos);
-			removeEventListener(Event.ENTER_FRAME, videoOnLoad);
-			var url:String=videos[currentVideo].@url;
-			this.getInitProvider(url);
+			removeEventListener(Event.ENTER_FRAME, videoOnLoad);		
+			var item:PlaylistItem = this.playList.getItemAt( this.playList.index );
+			this.getInitProvider(item.file);
+			
 			time.start();
+			
 			var pos:Number = this._provider.getPosition();
 			if(pos==0)
 				{
-					this._provider.load(url);
+					this._provider.load(item.file);
 					
-					trace('play and load ');
-					
-					panelMc.nameTxt.text=videos[currentVideo].@name;
+					panelMc.nameTxt.text = item.title;
 					addEventListener(Event.ENTER_FRAME, videoOnLoad);
 					panelMc.progressMc.invMc.addEventListener(MouseEvent.CLICK, changePos);
 				}else
 				{
 					this._provider.play();
-					trace('play event ');
 				}
-
-			
-			
 			
 			// кнопки
 			panelMc.playBtn.visible=false;
 			panelMc.pauseBtn.visible=true;
 			nameTimer.start();
-			
+				
+			//if(item.start > 0 )
+			//{
+			//this._provider.seek(item.start);
+			//}	
+			stage.dispatchEvent(new Event(Event.RESIZE));
 		}
 		
 		/* callback на ресайз */

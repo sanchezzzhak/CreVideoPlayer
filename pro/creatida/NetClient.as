@@ -40,9 +40,6 @@
             };
         }
 		
-
-		
-		
         public function onPlayStatus(... _args):void{
             var _local2:Object;
             for each (_local2 in _args) {
@@ -57,9 +54,11 @@
                 };
             };
         }
+		
         public function onTextData(_arg1:Object):void{
             this.forward(_arg1, "textdata");
         }
 
     }
+	
 }

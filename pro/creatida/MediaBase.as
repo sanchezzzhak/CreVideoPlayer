@@ -6,13 +6,14 @@ package pro.creatida {
 	import flash.net.*;
 	import flash.media.*;
 	import flash.utils.*;
+	import pro.creatida.PlaylistItem;
 	
 	/* Базовая модель */
 	public class MediaBase extends Sprite{
 		
 		public var name_provider:String;                 // Имя провайдера
 		public var state:String;                         // Состояние плеира
-		public var pos:Number = 0;                           // Начало позиции 
+		public var pos:Number = 0;                       // Начало позиции 
 		
 		public function MediaBase(provider:String):void
 		{

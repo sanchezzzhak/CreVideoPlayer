@@ -37,6 +37,13 @@
 			this.initProvider();
 		}
 
+		public function display():DisplayObject
+		{
+			return this.vid;
+		}
+		
+		
+		
 		override public function initProvider():void
 		{
 			this.client = new NetClient(this);
@@ -80,7 +87,6 @@
 		
 		public function setStream():void
 		{
-			//if(!this.vid) this.vid = new Video(320,240);
 			this._ns = new NetStream(this._nc);
 			this._ns.addEventListener(NetStatusEvent.NET_STATUS, this.statusHandler);
             this._ns.addEventListener(IOErrorEvent.IO_ERROR, this.errorHandler);

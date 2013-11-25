@@ -1,8 +1,10 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<VideoPlayer>	
-<video url='rtmp://cdn-the-2.musicradio.com:80/LiveVideo/Heart' name='Проверка 2 RTMP'/>
-<video url='rtmp://92.46.120.200/live/livestreamxxx' name='livestreamxxx'/>
-<video url='http://kaztube.kz/storage/1.8t_108.140/video/b0/64/1f/a0/ca/b0641fa0caddd2280133ec64ddde3819.mp4?start=0' name='Проверка 1'/>
-<video url='http://www.youtube.com/watch?v=EmSfp4fqArQ' name='Проверка Ютюба'/>
-<video url='http://www.youtube.com/watch?v=aHcNgxQ2waE' name='Проверка Ютюба'/>
+<VideoPlayer>
+<server><datetime hour="17" minute="57" second="50" year="2013" month="11" day="24"/></server>
+<videos>
+	<video date="2013-11-24" time="17:50" url='rtmp://cdn-the-2.musicradio.com:80/LiveVideo/Heart' name='Проверка 2 RTMP'/>
+	<video date="2013-11-24" time="17:56" url='http://kaztube.kz/storage/1.8t_108.140/video/b0/64/1f/a0/ca/b0641fa0caddd2280133ec64ddde3819.mp4?start=0' name='Проверка 1'/>
+	<video date="2013-11-24" time="18:01"url='http://www.youtube.com/watch?v=EmSfp4fqArQ' name='Проверка Ютюба'/>
+	<video date="2013-11-24" time="20:10" url='http://www.youtube.com/watch?v=aHcNgxQ2waE' name='Проверка Ютюба'/>
+</videos>
 </VideoPlayer>

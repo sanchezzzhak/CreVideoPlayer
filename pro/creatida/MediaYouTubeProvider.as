@@ -51,6 +51,13 @@
             trace(_arg1.text);
         }
 
+		
+		public function display():DisplayObject
+		{
+			return this._loader;
+		}
+		
+		
 		/* Загрузка API */
 		private function apiLoaded(_arg1:Event):void{
 			this._ytAPI = this._loader.content;
@@ -90,6 +97,14 @@
 		/* колбек для получения меты */
 		public function updatePlaybackStatus(_arg1:TimerEvent):void
 		{
+			this.bytesLodaed = this._ytAPI.getVideoBytesLoaded();
+            this.bytesTotal  = this._ytAPI.getVideoBytesTotal();
+            this.bytesOffset = this._ytAPI.getVideoStartBytes();
+			//this.meta.duration = this._ytAPI.getDuration();
+			
+			if (this.bytesTotal > 0){
+			
+			}
 			
 		}
 		
@@ -123,7 +138,7 @@
                     this._ytAPI.pauseVideo();
                 };
                 super.pause();
-            //};
+           // };
 		}
 		
 		/* Ресайз видео окна

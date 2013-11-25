@@ -38,14 +38,15 @@
 			this.ns=new NetStream(this.nc);
 			this.ns.client= this.client;
 			
-			this.vid = new Video(640,480);
+			this.vid = new Video(320,240);
 			this.vid.attachNetStream(this.ns);
-			//this.addChild(this.vid);
-			this.vid.visible = true;
-			
-			
-			
 		}
+		
+		public function display():DisplayObject
+		{
+			return this.vid;
+		}
+		
 		
 		/* Мут */
 		override public function mute(_arg1:Boolean):void
@@ -61,7 +62,6 @@
 		{
 			this.pos=0;
 			this.ns.close();
-			this.vid.visible=false;
 		}
 		
 		/* Плей */
