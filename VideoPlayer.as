@@ -841,10 +841,10 @@
 					break;
 				
 				case 'youtube': 
-					if ((this._provider is MediaYouTubeProvider) == false)
+					if ((this._provider is YouTubeProvider) == false)
 					{
 						this.destroyChildMediaLayer();
-						this._provider = new MediaYouTubeProvider;
+						this._provider = new YouTubeProvider;
 						this._mediaLayer.addChildAt(this._provider.display(), 0);
 					}
 					break;
