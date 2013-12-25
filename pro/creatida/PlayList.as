@@ -22,8 +22,7 @@
 		
 		/* Вернуть по номеру item из плейлиста */
 		public function getItemAt(_arg1:Number):PlaylistItem{
-			try 
-			{
+			try {
 				return this.list[_arg1];
 			}
 			catch(e:Error){};
@@ -43,7 +42,6 @@
 		{
 			return this.list[this.index];
 		}
-		
 		
 	}
 	

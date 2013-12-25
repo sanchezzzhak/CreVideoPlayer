@@ -8,6 +8,7 @@
 	
 	import pro.creatida.MediaBase;
 	import pro.creatida.PlayerState;
+	import com.greensock.easing.Ease;
 	
 
 	
@@ -24,6 +25,7 @@
 		private var bytesLodaed:Number;
 		private var bytesTotal:Number;
 		private var bytesOffset:Number;
+		private var duration:Number;
 		
 		public var meta:Object  = null;
 		
@@ -39,8 +41,7 @@
 
 		override public function initProvider():void
 		{
-			
-			
+			this.setState(PlayerState.IDLE);
 			this._loader = new Loader();
             this._loader.contentLoaderInfo.addEventListener(Event.COMPLETE, this.apiLoaded);
             this._loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR, this.loadErrorHandler);
@@ -59,16 +60,19 @@
 		
 		
 		/* Загрузка API */
-		private function apiLoaded(_arg1:Event):void{
+		private function apiLoaded(_arg1:Event):void {
+			
 			this._ytAPI = this._loader.content;
 			this._ytAPI.addEventListener("onReady", this.apiReady);
 			this._ytAPI.addEventListener("onStateChange", this.onStateChange);
 			
+			
 			this._statusTimer = new Timer(100);
             this._statusTimer.addEventListener(TimerEvent.TIMER, this.updatePlaybackStatus);
 			
-			//this._ytAPI.addEventListener("onError", this.onPlayerError);
+			//this._ytAPI.addEventListener("onError", this.onPlayerError);new
 			//this._ytAPI.addEventListener("onPlaybackQualityChange", this.onPlaybackQualityChange);
+			
 		}
 		
 		/*
@@ -76,10 +80,11 @@
 		*/
 		private function onStateChange(_arg1:Event):void 
 		{
+							
 			switch (Number(Object(_arg1).data)){
 				// стоит или буферит
 				case 0:
-					
+					//this.setState(PlayerState.IDLE);
 				break;
 				case 1:
                     super.play();
@@ -89,7 +94,7 @@
                     break;
 				// Буфер
                 case 3:
-				
+					this.setState(PlayerState.BUFFERING);
 					break;
 			}
 		}
@@ -97,13 +102,14 @@
 		/* колбек для получения меты */
 		public function updatePlaybackStatus(_arg1:TimerEvent):void
 		{
+		
 			this.bytesLodaed = this._ytAPI.getVideoBytesLoaded();
             this.bytesTotal  = this._ytAPI.getVideoBytesTotal();
             this.bytesOffset = this._ytAPI.getVideoStartBytes();
-			//this.meta.duration = this._ytAPI.getDuration();
+			this.duration 	 = this._ytAPI.getDuration();
 			
 			if (this.bytesTotal > 0){
-			
+				//_offset = ((this.bytesOffset / (this.bytesOffset + this.bytesTotal)) * this.duration);
 			}
 			
 		}
@@ -113,9 +119,13 @@
 		/* Видео готово к просмотру  */
 		private function apiReady(_arg1:Event):void
 		{
+		
 			this._ready = true;
 			//this._ytAPI.cueVideoById(this._videoId, 0, "default");
-			this._ytAPI.loadVideoById(this._videoId, 0, "default");
+			this._ytAPI.loadVideoById(this._videoId, this._offest, "default");
+			this._loader.y = -15;
+			this._loader.x = 0;
+			dispatchEvent(new Event(Event.RESIZE));
 		}
 		
 		/* Загрузка видео по URL  */
@@ -127,6 +137,7 @@
 		override public function play():void{
             if (this._ready){
                 this._ytAPI.playVideo();
+				
             };
         }
 		
@@ -146,7 +157,7 @@
 		* @var _arg2 высота 	
 		*/
 		public function resize(_arg1:Number, _arg2:Number):void{
-            if (this._ready){
+			if (this._ready){
                 this._ytAPI.setSize(_arg1, _arg2);
             };
         }
@@ -162,9 +173,10 @@
             if (this._ready){
                 this._ytAPI.seekTo(_arg1, true);
                 this.pos = _arg1;
-                super.seek(_arg1);
+                
                 this.play();
-            };
+            }
+			super.seek(_arg1);
         }
 		
 		/* Стоп */
@@ -194,14 +206,14 @@
         override public function setVolume(_arg1:Number):void
 		{
             if (this._ready){
-                this._ytAPI.setVolume(Math.min(Math.max(0, _arg1), 100));
+                this._ytAPI.setVolume(Math.min(Math.max(0,  Math.round(_arg1 * 100)   ), 100));
             };
             super.setVolume(_arg1);
         }
-		
-		public function getVolume(_arg1):Number
+
+		public function getSoundVolume():Number
 		{
-            var v:Number = 50;
+            var v:Number = 100;
 			if (this._ready){
                 v = this._ytAPI.getVolume();
             };
@@ -209,9 +221,11 @@
         }
 		
 		
-		public function onMeta(obj:Object):void
+		public function onMeta():Object
 		{
-			this.meta=obj;
+			var meta:Object = new Object
+			meta.duration = this.duration;
+			return meta;
 		}
 		
 		/* YouTubeAPI GET video ID by URL */

@@ -58,8 +58,9 @@
             //this._connection.objectEncoding = ObjectEncoding.AMF0;
 
 			this._snd = new SoundTransform();
-			this.vid  = new Video(320, 240);
+			this.vid  = new Video(480, 320); 
 			//this.vid.smoothing = true;
+			
 		}
 		
 		/* загрузим по URL  поток */
@@ -96,6 +97,7 @@
 			this._ns.client = this.client;
 			this.vid.attachNetStream(this._ns);
 			this._ns.play(this._stream_id);
+			dispatchEvent(new Event(Event.RESIZE));
 		}
 		
 		/* */
@@ -120,6 +122,7 @@
                     this.stop();
                     break;
 				case "NetStream.Buffer.Full":
+					
 					break;
                 case "NetConnection.Connect.Closed":
                     if (this.state == PlayerState.PAUSED){
@@ -169,7 +172,9 @@
             };
 			clearInterval(this._interval);
             this._interval = setInterval(this.onInterval, 100);
+			
 		}
+		
 
 		/** Пауза **/
 		override public function pause():void {
@@ -181,7 +186,7 @@
                 };
             };
             clearInterval(this._interval);
-			setState(PlayerState.PAUSED);
+			this.setState(PlayerState.PAUSED);
 		}
 		
 		override public function stop():void {
@@ -226,6 +231,7 @@
                     if (!this._metadata){
                         this._metadata = true;
                         if (_arg1.duration){
+							trace('duration' , _arg1.duration);
                             this.meta.duration = _arg1.duration;
                             if (this.pos){
                                 this.seek(this.pos);
@@ -233,6 +239,7 @@
 							
                         };
                         if (_arg1.width){
+						
                             this.resize(_arg1.width, _arg1.height);
                         };
                         //_arg1.provider = "rtmp";

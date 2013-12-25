@@ -30,9 +30,9 @@
 		
 		override public function initProvider():void
 		{
-			this.client.onMetaData = this.onMeta;
-			this.snd=new SoundTransform();
-			this.nc=new NetConnection();
+			this.client.onMetaData = this.onMetaData;
+			this.snd = new SoundTransform();
+			this.nc  = new NetConnection();
 			this.nc.connect(null);
 			
 			this.ns=new NetStream(this.nc);
@@ -40,13 +40,17 @@
 			
 			this.vid = new Video(320,240);
 			this.vid.attachNetStream(this.ns);
+			dispatchEvent(new Event(Event.RESIZE));
 		}
 		
+		/**
+		 * 
+		 * @return
+		 */
 		public function display():DisplayObject
 		{
 			return this.vid;
 		}
-		
 		
 		/* Мут */
 		override public function mute(_arg1:Boolean):void
@@ -60,21 +64,32 @@
 		/* Стоп */
 		override public function stop():void
 		{
-			this.pos=0;
-			this.ns.close();
+			if (this.ns.bytesLoaded < this.ns.bytesTotal){
+                this.ns.close();
+            } else {
+                this.ns.pause();
+                this.ns.seek(0);
+            };
+			
+			this.pos=0;	
+			super.stop();
+			
 		}
 		
 		/* Плей */
 		override public function play():void
 		{
 			this.ns.togglePause();
+			super.play();
+			
 		}
 		
 		/* Пауза */
 		override public function pause():void
 		{
 			this.pos=ns.time;
-			this.ns.togglePause();
+			this.ns.pause();
+			super.pause();
 		}
 		
 		/* позиция в кадре */
@@ -89,19 +104,39 @@
 			this.vid.visible=true;
 		}
 		
-		/* */
-		public function onMeta(obj:Object):void
+		/**
+		 * 
+		 * @param	obj
+		 */
+		public function onMetaData(obj:Object):void
 		{
 			this.meta=obj;
+			 if (this.meta.width){
+                this.resize(this.meta.width, this.meta.height);
+				
+				if (((obj.duration) && ((obj.duration < 1)))){
+					trace('ААА ');
+					trace(obj.duration);
+					//this.pos = obj.duration;
+				}
+			}
+			
 		}
 		
-		/* Звук +/- */
+		/**
+		 * Установить звук  +/- 
+		 * @param	_arg1
+		 **/
 		override public function setVolume(_arg1:Number):void
 		{
 			this.snd.volume=  Math.min(Math.max(0, _arg1), 100);
-			this.ns.soundTransform= this.snd;
+			this.ns.soundTransform = this.snd;
 		}
 		
+		/**
+		 * 
+		 * @return
+		 **/
 		public function getSoundVolume():Number
 		{
 			return this.snd.volume;
@@ -112,6 +147,7 @@
 		{
 			this.vid.width  = _arg1;
 			this.vid.height = _arg2;
+			
 		}
 		
 	}

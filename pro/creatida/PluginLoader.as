@@ -11,13 +11,10 @@ package pro.creatida
 	
 	import pro.creatida.utils.*;
 	
-	
-	
 	public class PluginLoader extends EventDispatcher 
 	{
 		
-		
-		public  var plugins:Object;                 // Список плагинов
+		public  var plugins:Object;
         private var loaders:Dictionary,             
         private var errorState:Boolean = false;      
 		
