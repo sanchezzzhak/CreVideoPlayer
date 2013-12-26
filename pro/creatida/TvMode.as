@@ -11,17 +11,12 @@
 	*/
 	public class TvMode extends EventDispatcher
 	{
-		public static const NextVideo:String   = "apiNextVideo";
-		public static const CurrentPlay:String = "apiGetCurrentPlay";
-		public static const GetPlayList:String = "apiGetPlayList";
+
+		public static const TV_MODE_CHECK:String = "TV_MODE_CHECK";
 		
-		public static const TvModeCheck:String = "apiTvModeCheck";  // use
-		
-		
-		
-		private var _timer_tick:uint = 0; 
-		private var _timer:Timer;            
-		private var _datetime:Date;          // Серверное время
+		private var _timer_tick:Number = 0; 
+		private var _timer:Timer; 
+		private var _datetime:Date;             // Серверное время
 		
 		public function TvMode():void
 		{
@@ -43,7 +38,7 @@
 		{
 			this._datetime.time+=1000;
 			if(this._timer_tick==3){
-				dispatchEvent(new Event(TvMode.TvModeCheck));
+				dispatchEvent(new Event(TvMode.TV_MODE_CHECK));
 				this._timer_tick = 0;
 			}
 			this._timer_tick++;

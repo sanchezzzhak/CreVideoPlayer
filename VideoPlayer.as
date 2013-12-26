@@ -30,24 +30,22 @@
 	
 	public class VideoPlayer extends Sprite
 	{
-		
+		private var _ready:Boolean = false;
 		private var _plugins:Object; // Плагины
+		
 		private var _playlist:PlayList; // Плейлист
 		private var _current:PlayListItem;
 		
-		
-		private var _imageLayer:Sprite; // Для картинок
-		private var _mediaLayer:Sprite; // Видео
-		private var _controlLayer:Sprite; // Для контроллеров
-		private var _adriverLayer:Sprite; // Реклама adSenseGoogle
+		private var _imageLayer:Sprite;         // Для картинок
+		private var _mediaLayer:Sprite;         // Видео
+		private var _controlLayer:Sprite;       // Для контроллеров
+		private var _adriverLayer:Sprite;       // Реклама adSenseGoogle
 		
 
-		
-		private var _provider:Object; // Видео провайдер 
-		private var _tvMode:TvMode; // ТВ Режим
-		
-		private var _isTvMode:Boolean = true; // Включен ли тв режим
-		private var _autoPlay:Boolean = true; // Автоплей
+		private var _provider:Object;           // Видео провайдер 
+		private var _tvMode:TvMode;             // ТВ Режим
+		private var _is_tv_mode:Boolean = true;
+		private var _auto_play:Boolean  = true; 
 		
 		private var meta = null;
 		private var time:Timer;
@@ -58,11 +56,13 @@
 		
 		/* ==== S K I N [ ==== */
 			
-			private var _preloader:MovieClip; 
-			private var _error_box: ErrorBox;
-		
-			private var _controls:Array = new Array;          // Массив контролов для _controlLayer
-			private var _controls_Loader:Array = new Array;   // Массив загруженных контроллеров
+		private var _check_load_complite_skin_timer:Timer;	
+		private var _preloader:MovieClip;                
+		private var _error_box: ErrorBox;
+	
+		private var _loader_arr:Array = new Array;
+        private var _loader_str:String;
+		private var _loader_control:Loader;
 		
 		/* ==== ] S K I N ==== */
 		
@@ -70,95 +70,109 @@
 		/* Base init */
 		public function VideoPlayer()
 		{
-			this.initLayers();
-			this._playlist = new PlayList;
-			
 			stage.scaleMode = StageScaleMode.NO_SCALE;
 			stage.align = StageAlign.TOP_LEFT;
 			Security.allowDomain('*');
 			
-			var url:String = './videos.xml';
+			this.initLayers();
 			
+			this._playlist = new PlayList;
+			
+			/*  flashvars parameters init */
+			var videos_url:String = './videos.xml';
 			if (stage.loaderInfo.parameters.hasOwnProperty('file'))
 			{
-				url = root.loaderInfo.parameters.file;
-				if (root.loaderInfo.parameters.hasOwnProperty('autoplay'))
-				{
-					this._autoPlay = root.loaderInfo.parameters.autoplay == 'true' ? true : false;
-				}
+				videos_url = root.loaderInfo.parameters.file;
+			}
+			if (root.loaderInfo.parameters.hasOwnProperty('autoplay'))
+			{
+				this._auto_play = root.loaderInfo.parameters.autoplay == 'true' ? true : false;
 			}
 			if (stage.loaderInfo.parameters.hasOwnProperty('tvmode'))
 			{
-				this._isTvMode = root.loaderInfo.parameters.tvmode == 'true' ? true : false;
+				this._is_tv_mode = root.loaderInfo.parameters.tvmode == 'true' ? true : false;
 			}
 			
-			// скин
+			/* skin init */
 			var skin_url:String = './skin.xml';
-			var skinLoader:URLLoader;
+			var skin_loader:URLLoader;
 			if (stage.loaderInfo.parameters.hasOwnProperty('skin'))
 			{
 				skin_url = root.loaderInfo.parameters.skin;
 			}
-			skinLoader = new URLLoader(new URLRequest(skin_url));
-			skinLoader.addEventListener(Event.COMPLETE, this.xmlLoadSkin);
+			skin_loader = new URLLoader(new URLRequest(skin_url));
+			skin_loader.addEventListener(Event.COMPLETE, this.loadSkinXml);
 			
-			
-			var extension:String = url.substring(url.lastIndexOf(".") + 1, url.length);
+			/*  current play init */
+			var extension:String = videos_url.substring(videos_url.lastIndexOf(".") + 1, videos_url.length);
 			switch (extension)
 			{
 				case 'mov': 
 				case 'flv': 
 				case 'mp4': 
-					var playItem:PlayListItem = new PlayListItem;
-					playItem.file = url;
-					this._playlist.insert(playItem);
+					
+					var play_item:PlayListItem = new PlayListItem;
+						play_item.file = videos_url;
+						
+					this._playlist.insert(play_item);
+					this._current = play_item; 
 					break;
 				case 'xml': 
 				default: 
-					//url+= '?r=' +new Date().getTime();
-					var xmlLoader:URLLoader = new URLLoader(new URLRequest(url));
+					/* url+= '?r=' +new Date().getTime(); */
+					var xmlLoader:URLLoader = new URLLoader(new URLRequest(videos_url));
 					xmlLoader.addEventListener(Event.COMPLETE, this.xmlLoadPlayList);
 					break;
 			
 			}
-			;
-			panelMc.playBtn.visible = true;
-			panelMc.pauseBtn.visible = false;
-		
+
+			//panelMc.playBtn.visible = true;
+			//panelMc.pauseBtn.visible = false;
 		}
+		
+		/**
+		 * 
+		 */
+		private function ready():void
+		{
+			this._ready = true;
+			if (this._auto_play == true) 
+			{
+				playVideo();
+			}
+			
+		}
+		
 		
 		/**
 		 * init Layers and Controlls VideoPlayer
 		 */
 		public function initLayers():void
 		{
-			
-			this._controlLayer = new Sprite;
-			this._controlLayer.name = 'control_layer';
-			
 			this._mediaLayer = new Sprite();
 			this._mediaLayer.name = 'media_layer';
 			this._mediaLayer.x = 0;
 			this._mediaLayer.y = 0;
+			addChildAt(this._mediaLayer, 0);    // 0
+			
+			this._controlLayer = new Sprite;
+			this._controlLayer.name = 'control_layer';
+			addChildAt(this._controlLayer,1);  // 1
+			
+			this._adriverLayer = new Sprite;
+			this._adriverLayer.name = 'adriver_layer';
+			this._adriverLayer.visible = false;
+			addChildAt(this._adriverLayer, 2); 
+			
+			this._error_box = new ErrorBox;
+			addChildAt(this._error_box, 3);
 			
 			/*
 			this._pluginLayer = new Sprite;
 			this._pluginLayer.name = 'plugin_layer';
 			this._pluginLayer.visible = false;
+			addChild(this._pluginLayer);
 			*/
-			
-			this._adriverLayer = new Sprite;
-			this._adriverLayer.name = 'adriver_layer';
-			this._adriverLayer.visible = false;
-			
-			this._error_box = new ErrorBox;
-			addChildAt(this._mediaLayer,0);    // 0
-			addChildAt(this._controlLayer,1);  // 1
-			//addChild(this._pluginLayer); 
-			addChildAt(this._adriverLayer,2); 
-			
-			addChildAt(this._error_box, 3);
-			
 		}
 		
 		
@@ -167,7 +181,7 @@
 		 * Callback load preloader
 		 * @param	_arg1
 		 */
-		private function preloaderLoaded(_arg1:Event):void
+		private function preloaderComplite(_arg1:Event):void
 		{
 			this._preloader = new MovieClip();
 			this._preloader.addChild(_arg1.target.loader);
@@ -185,39 +199,115 @@
 			var _loader:Loader;
 			_loader = new Loader();
 			_loader.load(new URLRequest(_arg1));
-			_loader.contentLoaderInfo.addEventListener(Event.COMPLETE, this.preloaderLoaded);
-			// _loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR,  this.ioErrorHandler2);
+			_loader.contentLoaderInfo.addEventListener(Event.COMPLETE, this.preloaderComplite);
+			//_loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR,  this.ioErrorHandler);
 		}
 		
 		/**
-		 * Callback Load Skin
+		 * Load Skin
 		 * @param	e
 		 */
-		public function xmlLoadSkin(e:Event):void
+		public function loadSkinXml(e:Event):void
 		{
-			var xml:XML = XML(e.target.data);
-			
-			// Загрузка прелойдера
-			if (xml.preloader.@src != undefined)
+			var assets_xml:XML = XML(e.target.data);
+			var assets:XMLList = assets_xml.children();
+
+			for each (var asset in assets)
 			{
-				this.loadPreloader(xml.preloader.@src);
+				var name:String = asset.name().toString();
+				var attr_arr:Array = new Array;	
+				for each (var attr : XML in asset.attributes())
+				{
+					attr_arr[ attr.name().toString() ] =  attr.valueOf();
+				}
+				// Прелойдер
+				if (name == 'preloader')
+				{
+					this.loadPreloader(asset.@src);
+					continue;
+				}
+				
+				
+				
+				this._loader_control = new Loader();
+				this._loader_control.name = name;
+				this._loader_control.load(new URLRequest(asset.@file));
+				this._loader_control.contentLoaderInfo.addEventListener(Event.COMPLETE, this.skinLoaderComplite);
+                this._loader_control.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR, this.ioErrorHandler);
+
+				this._loader_arr.push({
+					name    : this._loader_control.name,
+                    loader  : this._loader_control.contentLoaderInfo,
+					is_load : false,
+					attr    : attr_arr
+				});
+				
 			}
-			// Дизайн кнопок
 			
+			this._check_load_complite_skin_timer = new Timer(1000);
+			this._check_load_complite_skin_timer.addEventListener(TimerEvent.TIMER, checkSkinLoadComplite);
+			this._check_load_complite_skin_timer.start();
+		}
 		
+		/**
+		 * 
+		 * @param	e
+		 */
+		public function checkSkinLoadComplite(e:TimerEvent):void
+		{
+			if (this._loader_arr.length == 0)
+			{
+				this._check_load_complite_skin_timer.removeEventListener(TimerEvent.TIMER, this.checkSkinLoadComplite);
+				this.ready();
+			}
+			
+		}
+		
+		
+		/**
+		 * 
+		 * @param	e
+		 */
+		private function skinLoaderComplite(e:Event):void 
+		{
+			for (var index = 0, loader_length = this._loader_arr.length;  index < loader_length; index++)
+			{
+				if (this._loader_arr[index].name == e.target.loader.name)
+				{
+					trace('asset loader ', this._loader_arr[index].name );
+					this._loader_arr[index].is_load = true;
+					
+					var loader:Loader = e.target.loader as Loader; 
+					switch(this._loader_arr[index].name)
+					{
+						
+						
+					}
+					this._loader_arr.splice(index);
+				};
+			};
+		}
+		
+		/**
+		 * 
+		 * @param	e
+		 */
+		private function ioErrorHandler(e:IOErrorEvent):void 
+		{
+	
 		}
 		
 		private function initMenu()
 		{
 			var menu:ContextMenu = new ContextMenu;
-			menu.hideBuiltInItems();
+				menu.hideBuiltInItems();
 			/*
 			   function (e:ContextMenuEvent){
 			   navigateToURL(new URLRequest("http://creatida.kz/crea-video-player")
 			 };*/
 			//  new ContextMenuItem("© CreaVideo Player").addEventListener(ContextMenuEvent.MENU_ITEM_SELECT,fun1)
 			//menu.customItems.push();
-			contextMenu = menu;
+			this.contextMenu = menu;
 		}
 		
 		public function error(text_error:String):void {
@@ -227,7 +317,7 @@
 		
 		
 		/**
-		 * Callback загрузка PlayList
+		 * 
 		 * @param	e
 		 */
 		private function xmlLoadPlayList(e:Event):void
@@ -246,10 +336,16 @@
 					playItem.date = item.@date;
 				}
 				
+				// first item play list
+				if (this._current == null)
+				{
+					this._current = playItem;
+				}
+				
 				var childs:XMLList = item.children();
 				for each (var child in childs)
 				{
-					/* tv рекламнные ролики */
+					/* tv рекламные ролики */
 					if (child.name().toString() == 'reclame')
 					{
 						var reclame_item:PlayListItem = new PlayListItem;
@@ -261,12 +357,20 @@
 				
 				this._playlist.insert(playItem);
 			}
-			
+			// Server time
 			if (xml.hasOwnProperty('server'))
 			{
 				this._tvMode = new TvMode;
-				this._tvMode.setDateTime(xml.server.datetime.@year, (parseInt(xml.server.datetime.@month) - 1), xml.server.datetime.@day, xml.server.datetime.@hour, xml.server.datetime.@minute, xml.server.datetime.@second);
-				this._tvMode.addEventListener(TvMode.TvModeCheck, tvModeCheck);
+				
+				this._tvMode.setDateTime(
+					xml.server.datetime.@year, 
+					(parseInt(xml.server.datetime.@month) - 1),
+					xml.server.datetime.@day, xml.server.datetime.@hour, 
+					xml.server.datetime.@minute, 
+					xml.server.datetime.@second
+				);
+				
+				this._tvMode.addEventListener(TvMode.TV_MODE_CHECK, this.tvModeCheck);
 			}
 			init();
 		}
@@ -277,7 +381,7 @@
 		 * @param time string  Дата формат H:i:s
 		 * @return Date
 		 */
-		private function parseDateStringToDate(date:String, time:String):Date
+		private function parseServerDate(date:String, time:String):Date
 		{
 			var _date:Date = new Date;
 			var arrDate:Array = date.split('-');
@@ -293,9 +397,8 @@
 		 */
 		public function tvModeCheck(e:Event):void
 		{
-			if (this._isTvMode == true)
+			if (this._ready == true && this._is_tv_mode == true)
 			{
-				
 				var serDate:Date = this._tvMode.getServerDate(); // Серверное время
 				var endDate:Date = new Date;
 				var nextDate:Date = new Date;
@@ -305,13 +408,13 @@
 				
 				for each (var item:PlayListItem in this._playlist.list)
 				{
-					endDate = this.parseDateStringToDate(item.date, item.time);
+					endDate = this.parseServerDate(item.date, item.time);
 					nextItem = this._playlist.getItemAt(item.index + 1);
 					// Есть ли в плей листе след. ролик
 					if (nextItem != null)
 					{
 						// След дата показа...
-						nextDate = this.parseDateStringToDate(nextItem.date, nextItem.time);
+						nextDate = this.parseServerDate(nextItem.date, nextItem.time);
 						if (serDate.getTime() >= endDate.getTime() && serDate.getTime() < nextDate.getTime())
 						{
 							playItem = item;
@@ -330,7 +433,7 @@
 				{
 					this._current = playItem;
 					// проверяем разницу по времени на сколько промотать сеанс 
-					endDate = this.parseDateStringToDate(playItem.date, playItem.time);
+					endDate = this.parseServerDate(playItem.date, playItem.time);
 					var offset:Number = Math.round((serDate.getTime() / 1000) - (endDate.getTime() / 1000));
 					if (offset > 0)
 					{
@@ -395,8 +498,7 @@
 			createVideoBtns();
 			hidePlaylist();
 			
-			if (this._autoPlay == true)
-				playVideo();
+
 		}
 		
 		/* Уничтожитель слоев для провайдеров */
@@ -512,7 +614,7 @@
 					nextVideo();
 					break;
 				case 'fullBtn': 
-					fullHandler();
+					stageDisplayHandler();
 					break;
 				case 'volMc': 
 					changeVol();
@@ -520,7 +622,7 @@
 			}
 		}
 		
-		private function fullHandler():void
+		private function stageDisplayHandler():void
 		{
 			trace(stage.scaleMode)
 			if (stage.displayState == StageDisplayState.NORMAL)
@@ -882,7 +984,7 @@
 			this._provider.removeEventListener(Event.RESIZE, this.resizeHandler);
 			this._provider.addEventListener(Event.RESIZE, this.resizeHandler);
 			
-			if (this._isTvMode == true && this._current.start > 0)
+			if (this._is_tv_mode == true && this._current.start > 0)
 			{
 				
 				trace(this._current.file, this._current.start);
