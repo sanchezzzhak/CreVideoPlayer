@@ -33,17 +33,15 @@
 		
 		private var _plugins:Object; // Плагины
 		private var _playlist:PlayList; // Плейлист
+		private var _current:PlayListItem;
+		
 		
 		private var _imageLayer:Sprite; // Для картинок
 		private var _mediaLayer:Sprite; // Видео
 		private var _controlLayer:Sprite; // Для контроллеров
 		private var _adriverLayer:Sprite; // Реклама adSenseGoogle
 		
-		private var _preloader:MovieClip; // Прелойдер
-		
-		private var _error_box: ErrorBox;
-		
-		
+
 		
 		private var _provider:Object; // Видео провайдер 
 		private var _tvMode:TvMode; // ТВ Режим
@@ -56,6 +54,18 @@
 		
 		private var slideTimer:Timer;
 		private var nameTimer:Timer;
+		
+		
+		/* ==== S K I N [ ==== */
+			
+			private var _preloader:MovieClip; 
+			private var _error_box: ErrorBox;
+		
+			private var _controls:Array = new Array;          // Массив контролов для _controlLayer
+			private var _controls_Loader:Array = new Array;   // Массив загруженных контроллеров
+		
+		/* ==== ] S K I N ==== */
+		
 		
 		/* Base init */
 		public function VideoPlayer()
@@ -88,14 +98,10 @@
 			if (stage.loaderInfo.parameters.hasOwnProperty('skin'))
 			{
 				skin_url = root.loaderInfo.parameters.skin;
-				skinLoader = new URLLoader(new URLRequest(skin_url));
-				skinLoader.addEventListener(Event.COMPLETE, this.xmlLoadSkin);
 			}
-			else
-			{
-				skinLoader = new URLLoader(new URLRequest(skin_url));
-				skinLoader.addEventListener(Event.COMPLETE, this.xmlLoadSkin);
-			}
+			skinLoader = new URLLoader(new URLRequest(skin_url));
+			skinLoader.addEventListener(Event.COMPLETE, this.xmlLoadSkin);
+			
 			
 			var extension:String = url.substring(url.lastIndexOf(".") + 1, url.length);
 			switch (extension)
@@ -103,7 +109,7 @@
 				case 'mov': 
 				case 'flv': 
 				case 'mp4': 
-					var playItem:PlaylistItem = new PlaylistItem;
+					var playItem:PlayListItem = new PlayListItem;
 					playItem.file = url;
 					this._playlist.insert(playItem);
 					break;
@@ -191,10 +197,13 @@
 		{
 			var xml:XML = XML(e.target.data);
 			
+			// Загрузка прелойдера
 			if (xml.preloader.@src != undefined)
 			{
 				this.loadPreloader(xml.preloader.@src);
 			}
+			// Дизайн кнопок
+			
 		
 		}
 		
@@ -227,7 +236,7 @@
 			var videos:XMLList = xml.videos.children();
 			for each (var item in videos)
 			{
-				var playItem:PlaylistItem = new PlaylistItem;
+				var playItem:PlayListItem = new PlayListItem;
 				playItem.file = item.@url;
 				playItem.title = item.@name;
 				// для тв режима...
@@ -243,7 +252,7 @@
 					/* tv рекламнные ролики */
 					if (child.name().toString() == 'reclame')
 					{
-						var reclame_item:PlaylistItem = new PlaylistItem;
+						var reclame_item:PlayListItem = new PlayListItem;
 						reclame_item.file = child.@url;
 						reclame_item.title = child.@name;
 						playItem.reclame_list.insert(reclame_item);
@@ -288,31 +297,27 @@
 			{
 				
 				var serDate:Date = this._tvMode.getServerDate(); // Серверное время
-				
 				var endDate:Date = new Date;
 				var nextDate:Date = new Date;
 				
-				var playItem:PlaylistItem;
-				var nextItem:PlaylistItem;
+				var playItem:PlayListItem;
+				var nextItem:PlayListItem;
 				
-				for each (var item:PlaylistItem in this._playlist.list)
+				for each (var item:PlayListItem in this._playlist.list)
 				{
-					
 					endDate = this.parseDateStringToDate(item.date, item.time);
-					
 					nextItem = this._playlist.getItemAt(item.index + 1);
 					// Есть ли в плей листе след. ролик
 					if (nextItem != null)
 					{
 						// След дата показа...
 						nextDate = this.parseDateStringToDate(nextItem.date, nextItem.time);
-						
 						if (serDate.getTime() >= endDate.getTime() && serDate.getTime() < nextDate.getTime())
 						{
 							playItem = item;
 						}
 					}
-					// Если серверное время привышает показываем...
+					// Если серверное время привышает начало ролика
 					else if (serDate.getTime() >= endDate.getTime())
 					{
 						playItem = item;
@@ -320,34 +325,36 @@
 					
 				}
 				
-				if (playItem != null && playItem.index != this._playlist.index)
+				// Переключение на след сеанс
+				if (playItem != null && playItem.auto_id != this._current.auto_id)
 				{
+					this._current = playItem;
 					// проверяем разницу по времени на сколько промотать сеанс 
 					endDate = this.parseDateStringToDate(playItem.date, playItem.time);
 					var offset:Number = Math.round((serDate.getTime() / 1000) - (endDate.getTime() / 1000));
 					if (offset > 0)
 					{
-						this._playlist.getItemAt(playItem.index).start = offset;
+						this._current.start = offset;
 					}
-					this._playlist.index = playItem.index;
 					this.stopVideo();
 					this.playVideo();
 				}
+				// Показываем внутриние ролики в плейлисте сеанса
+				/*
+				else if (this._provider.getSrage() == PlayerState.END ) {
+					var reclame_count:Number = playItem.reclame_list.list.length; 
+					if ( reclame_count > 0 )
+					{
+						for each(var item:PlayListItem in playItem.reclame_list)
+						{
+							if( (this._current.auto_id + 1) == item.auto_id
+						}
+						
+					}
+				}
+				*/
 				
 			}
-		}
-		
-		/* Получить текущий итем, который проигрывается */
-		public function currentPlayItem():PlaylistItem
-		{
-			arguments;
-			return this._playlist.currentPlayItem();
-		}
-		
-		/* Получить плайлист */
-		public function getPlayList():PlayList
-		{
-			return this._playlist;
 		}
 		
 		/**/
@@ -868,29 +875,28 @@
 			
 			panelMc.progressMc.invMc.removeEventListener(MouseEvent.CLICK, changePos);
 			removeEventListener(Event.ENTER_FRAME, videoOnLoad);
-			var item:PlaylistItem = this._playlist.getItemAt(this._playlist.index);
 			time.start();
-			this.getInitProvider(item.file);
+			this.getInitProvider(this._current.file);
 			var pos:Number = this._provider.getPosition();
 			
 			this._provider.removeEventListener(Event.RESIZE, this.resizeHandler);
 			this._provider.addEventListener(Event.RESIZE, this.resizeHandler);
 			
-			if (this._isTvMode == true && item.start > 0)
+			if (this._isTvMode == true && this._current.start > 0)
 			{
 				
-				trace(item.file, item.start);
-				this._provider.load(item.file);
+				trace(this._current.file, this._current.start);
+				this._provider.load(this._current.file);
 				this._provider.play();
-				this._provider.seek(item.start);
+				this._provider.seek(this._current.start);
 				
 			}
-			else if (pos == 0 && item.start == 0)
+			else if (pos == 0 && this._current.start == 0)
 			{
-				trace(item.file);
-				this._provider.load(item.file);
+				trace(this._current.file);
+				this._provider.load(this._current.file);
 				
-				panelMc.nameTxt.text = item.title;
+				panelMc.nameTxt.text = this._current.title;
 				addEventListener(Event.ENTER_FRAME, videoOnLoad);
 				panelMc.progressMc.invMc.addEventListener(MouseEvent.CLICK, changePos);
 			}

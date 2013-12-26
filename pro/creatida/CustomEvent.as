@@ -2,11 +2,18 @@
 {
 	import flash.events.Event;
 	
-	
-	/* Кастомные события + данные */
+	/**
+	 * Кастомные события c посылкой данных 
+	 * @example 
+	 *    // send
+	 *    var result_data:Object = { Message: "I'm saying this!", user_id:1 };
+	 *    dispatchEvent(new CustomEvent(CustomEvent.RESULT_DATA, result_data));
+	 * 
+	 * 	  
+	 **/
 	public class CustomEvent extends Event
 	{
-		public static const RESULT_DATA:String = "EventResultData";
+		public static const RESULT_DATA:String = "EVENT_RESULT_DATA";
 		
 		public var data:Object;	
 		

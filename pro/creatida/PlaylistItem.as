@@ -1,12 +1,12 @@
 ﻿package pro.creatida 
 {
-	import pro.creatida.PlayList
+	import pro.creatida.PlayList;
 	
 	/* Динамический класс реализует item для PlayList класса */
-	public dynamic class PlaylistItem  
+	public dynamic class PlayListItem  
 	{
+		public var auto_id:Number = 0;
 		public var poster:String = "";                   // Картинка для пред. показа
-		
 		public var desc:String   = "";                   // Описание
 		
 		public var file:String   = "";                   // URL на файл
