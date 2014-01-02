@@ -1,7 +1,9 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <skin>
-	<preloader src=".\preloader.swf" />
-
-	
-	
+	<preloader src="assets/preloader.swf" enable="true" />
+	<center_btn play="assets/center_play.png" pause="assets/center_pause.png" width="80" height="80" />
+	<conteiner name="panel_mc">
+		<play_btn  enabled="true" out="assets/play_out.gif" over="assets/play_over.gif" press="assets/play_over.gif" />
+		<pause_btn enabled="true" out="assets/pause_out.gif" over="assets/pause_over.gif" press="assets/pause_over.gif"/>
+	</conteiner>
 </skin>

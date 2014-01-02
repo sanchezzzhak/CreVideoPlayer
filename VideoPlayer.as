@@ -3,6 +3,7 @@
 	
 	
 
+
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
 	import flash.ui.ContextMenuBuiltInItems;
@@ -28,9 +29,12 @@
 	import pro.creatida.*;
 	import pro.creatida.utils.ErrorBox;
 	
+	
+
+	
 	public class VideoPlayer extends Sprite
 	{
-		private var _ready:Boolean = false;
+		private var _ready:Boolean = true;
 		private var _plugins:Object; // Плагины
 		
 		private var _playlist:PlayList; // Плейлист
@@ -56,15 +60,29 @@
 		
 		/* ==== S K I N [ ==== */
 			
-		private var _check_load_complite_skin_timer:Timer;	
+		private var _check_ready_timer:Timer;	
 		private var _preloader:MovieClip;                
 		private var _error_box: ErrorBox;
 	
 		private var _loader_arr:Array = new Array;
         private var _loader_str:String;
+		private var _controls_params:Array = new Array;
 		private var _loader_control:Loader;
 		
+		private var _conteiners:Array = new Array;
+		
+		
+		public static function dump(array):void {
+			for (var t:Object in array)
+			{
+				trace(t + " : " + array[t]);
+			}
+		}
+
+		include "SkinFunctions.as";
+		
 		/* ==== ] S K I N ==== */
+		
 		
 		
 		/* Base init */
@@ -136,6 +154,7 @@
 		private function ready():void
 		{
 			this._ready = true;
+			this.positionControls();
 			if (this._auto_play == true) 
 			{
 				playVideo();
@@ -156,6 +175,10 @@
 			addChildAt(this._mediaLayer, 0);    // 0
 			
 			this._controlLayer = new Sprite;
+			this.x = this.y = 0;
+			this.width = stage.stageWidth;
+			this.height = stage.stageHeight;
+			
 			this._controlLayer.name = 'control_layer';
 			addChildAt(this._controlLayer,1);  // 1
 			
@@ -185,9 +208,8 @@
 		{
 			this._preloader = new MovieClip();
 			this._preloader.addChild(_arg1.target.loader);
-			this._preloader.x = ((stage.width / 2) - (this._preloader.width / 2));
-			this._preloader.y = ((stage.height / 2) - (this._preloader.height / 2));
-			addChildAt(this._preloader, 2);
+			addChild(this._preloader);
+			this._preloader.visible = false;
 		}
 		
 		/**
@@ -200,9 +222,29 @@
 			_loader = new Loader();
 			_loader.load(new URLRequest(_arg1));
 			_loader.contentLoaderInfo.addEventListener(Event.COMPLETE, this.preloaderComplite);
-			//_loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR,  this.ioErrorHandler);
+			_loader.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR,  this.ioErrorHandler);
 		}
 		
+		/**
+		 * 
+		 */
+		public function positionControls():void
+		{
+			var center_x:Number = stage.stageWidth / 2;
+			var center_y:Number = stage.stageHeight / 2;
+			var ratio:Number = stage.stageWidth / stage.stageWidth;
+			
+			this.center_btn_play.x  = (center_x - (this.center_btn_play.width / 2));
+			this.center_btn_pause.x = (center_x - (this.center_btn_pause.width / 2));
+			
+			this.center_btn_play.y  = (center_y - (this.center_btn_play.height / 2));
+			this.center_btn_pause.y = (center_y - (this.center_btn_pause.height / 2));
+			
+			this._preloader.x = ((center_x) - (this._preloader.width / 2));
+			this._preloader.y = ((center_y) - (this._preloader.height / 2));
+
+		}
+				
 		/**
 		 * Load Skin
 		 * @param	e
@@ -210,82 +252,46 @@
 		public function loadSkinXml(e:Event):void
 		{
 			var assets_xml:XML = XML(e.target.data);
-			var assets:XMLList = assets_xml.children();
-
-			for each (var asset in assets)
-			{
-				var name:String = asset.name().toString();
-				var attr_arr:Array = new Array;	
-				for each (var attr : XML in asset.attributes())
-				{
-					attr_arr[ attr.name().toString() ] =  attr.valueOf();
-				}
-				// Прелойдер
-				if (name == 'preloader')
-				{
-					this.loadPreloader(asset.@src);
-					continue;
-				}
-				
-				
-				
-				this._loader_control = new Loader();
-				this._loader_control.name = name;
-				this._loader_control.load(new URLRequest(asset.@file));
-				this._loader_control.contentLoaderInfo.addEventListener(Event.COMPLETE, this.skinLoaderComplite);
-                this._loader_control.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR, this.ioErrorHandler);
-
-				this._loader_arr.push({
-					name    : this._loader_control.name,
-                    loader  : this._loader_control.contentLoaderInfo,
-					is_load : false,
-					attr    : attr_arr
-				});
-				
-			}
 			
-			this._check_load_complite_skin_timer = new Timer(1000);
-			this._check_load_complite_skin_timer.addEventListener(TimerEvent.TIMER, checkSkinLoadComplite);
-			this._check_load_complite_skin_timer.start();
+			this.xmlSkinParse(assets_xml.children());
+			
+			this._check_ready_timer = new Timer(200);
+			this._check_ready_timer.addEventListener(TimerEvent.TIMER, checkReadyComplite);
+			this._check_ready_timer.start();
 		}
+		
+		private function pushLoader(name:String ,file:String):void
+		{
+			this._loader_control = new Loader;
+			this._loader_control.name = name;
+			this._loader_control.load(new URLRequest(file));
+			this._loader_control.contentLoaderInfo.addEventListener(Event.COMPLETE, this.skinLoaderComplite);
+            this._loader_control.contentLoaderInfo.addEventListener(IOErrorEvent.IO_ERROR, this.ioErrorHandler);
+
+			this._loader_arr.push({
+				name    : this._loader_control.name,
+				loader  : this._loader_control.contentLoaderInfo,
+				is_load : false
+			});
+		}
+		
 		
 		/**
 		 * 
 		 * @param	e
 		 */
-		public function checkSkinLoadComplite(e:TimerEvent):void
+		public function checkReadyComplite(e:TimerEvent):void
 		{
 			if (this._loader_arr.length == 0)
 			{
-				this._check_load_complite_skin_timer.removeEventListener(TimerEvent.TIMER, this.checkSkinLoadComplite);
+				this._check_ready_timer.removeEventListener(
+					TimerEvent.TIMER, 
+					this.checkReadyComplite
+				);
+				
 				this.ready();
 			}
 			
-		}
-		
-		
-		/**
-		 * 
-		 * @param	e
-		 */
-		private function skinLoaderComplite(e:Event):void 
-		{
-			for (var index = 0, loader_length = this._loader_arr.length;  index < loader_length; index++)
-			{
-				if (this._loader_arr[index].name == e.target.loader.name)
-				{
-					trace('asset loader ', this._loader_arr[index].name );
-					this._loader_arr[index].is_load = true;
-					
-					var loader:Loader = e.target.loader as Loader; 
-					switch(this._loader_arr[index].name)
-					{
-						
-						
-					}
-					this._loader_arr.splice(index);
-				};
-			};
 		}
 		
 		/**
@@ -294,7 +300,7 @@
 		 */
 		private function ioErrorHandler(e:IOErrorEvent):void 
 		{
-	
+			trace('ioErrorHandler:' , e.target.url);
 		}
 		
 		private function initMenu()
@@ -369,7 +375,6 @@
 					xml.server.datetime.@minute, 
 					xml.server.datetime.@second
 				);
-				
 				this._tvMode.addEventListener(TvMode.TV_MODE_CHECK, this.tvModeCheck);
 			}
 			init();
@@ -901,7 +906,7 @@
 		 *   @var extension   расширение файла...
 		 */
 		private function parseUrl(_arg1:String):Array
-		{
+		{ 
 			var reg_http:RegExp = /(?P<protocol>[a-zA-Z]+) : \/\/  (?P<host>[^:\/]*) (:(?P<port>\d+))?  ((?P<path>[^?]*))? ((?P<parameters>.*))? /x;
 			var result_http:Array = reg_http.exec(_arg1);
 			
@@ -927,8 +932,10 @@
 				{
 					_name = 'youtube'
 				}
-				else
+				else if(domain == 'vk')
 				{
+					_name = 'vk';
+				}else{
 					_name = 'video';
 				}
 			}
@@ -957,6 +964,7 @@
 						this._mediaLayer.addChildAt(this._provider.display(), 0);
 					}
 					break;
+				
 				case 'video': 
 					if ((this._provider is VideoProvider) == false)
 					{
@@ -964,13 +972,22 @@
 						this._provider = new VideoProvider;
 						this._mediaLayer.addChildAt(this._provider.display(), 0);
 					}
-					break;
+				break;
 				
-				case 'vkontakte': 
-					break;
+				case 'vk':
+					if ((this._provider is VkProvider) == false)
+					{
+						this.destroyChildMediaLayer();
+						this._provider = new VkProvider;
+						this._mediaLayer.addChildAt(this._provider.display(), 0);
+					}
+				break;
 			}
 		
 		}
+
+		
+		
 		
 		private function playVideo():void
 		{
@@ -1018,12 +1035,18 @@
 		/* callback на ресайз */
 		public function resizeHandler(_arg1:Event)
 		{
+		
+			
 			var center_x:Number = stage.stageWidth / 2;
 			var center_y:Number = stage.stageHeight / 2;
 			var ratio:Number = stage.stageWidth / stage.stageWidth;
 
 			this._error_box.resize(stage.stageWidth, stage.stageHeight);
-			this._provider.resize(stage.stageWidth, stage.stageHeight);
+			
+			if(this._provider != null)
+				this._provider.resize(stage.stageWidth, stage.stageHeight);
+			
+			this.positionControls();
 		}
 	
 	}
