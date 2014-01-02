@@ -1,4 +1,4 @@
-﻿package pro.creatida.utils 
+﻿package com.creatida.utils 
 {
 		
 	public class AssetLoader extends EventDispatcher  

@@ -17,3 +17,5 @@ Support format `raw video`, `stream rtmp`, `youtube`, `vk ???`
 </VideoPlayer>
 ```
 `autoplay` true/false использовать автоплей, значение по умолчанию = false<br>
+
+

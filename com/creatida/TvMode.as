@@ -1,11 +1,8 @@
-﻿package pro.creatida 
+﻿package com.creatida 
 {
 	import flash.display.*;
 	import flash.utils.*;
 	import flash.events.*;
-	
-	import pro.creatida.PlayList;
-	
 	/**
 	* ТВ Режим для плеира
 	*/

@@ -1,5 +1,5 @@
 ﻿
-package pro.creatida {
+package com.creatida {
 	
 	import flash.display.*;
 	import flash.events.*;

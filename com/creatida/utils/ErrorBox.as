@@ -1,4 +1,4 @@
-package pro.creatida.utils 
+package com.creatida.utils 
 {
 	import flash.display.Sprite;
 	import flash.text.*;

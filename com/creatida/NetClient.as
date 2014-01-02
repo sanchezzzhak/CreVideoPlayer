@@ -1,4 +1,4 @@
-﻿package pro.creatida
+﻿package com.creatida
 {	
 	public dynamic class NetClient {
 

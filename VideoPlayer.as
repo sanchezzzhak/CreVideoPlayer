@@ -26,11 +26,8 @@
 	
 	import flash.geom.Rectangle;
 	import com.greensock.*;
-	import pro.creatida.*;
-	import pro.creatida.utils.ErrorBox;
-	
-	
-
+	import com.creatida.*;
+	import com.creatida.utils.ErrorBox;
 	
 	public class VideoPlayer extends Sprite
 	{

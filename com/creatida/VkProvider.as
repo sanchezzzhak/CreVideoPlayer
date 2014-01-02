@@ -1,4 +1,4 @@
-package pro.creatida 
+package com.creatida 
 {
 	import flash.display.Sprite;
 	import flash.net.*;
@@ -30,6 +30,7 @@ package pro.creatida
 		{
 			this.meta = null;
 			this.getVideoUrl(url);
+			this.vid.visible = true;
 			while (true)
 			{
 				if (this._ready == true)
@@ -39,7 +40,7 @@ package pro.creatida
 				}
 				
 			}
-			this.vid.visible = true;
+			
 		}
 		
 		/**
@@ -72,7 +73,6 @@ package pro.creatida
 						// url360
 						// url480 
 						// url720
-			
 			
 			this._ready = true;
 			

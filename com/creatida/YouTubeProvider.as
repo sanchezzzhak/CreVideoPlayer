@@ -1,4 +1,4 @@
-﻿package pro.creatida { 
+﻿package com.creatida { 
 
 	import flash.display.*;
 	import flash.events.*;
@@ -6,8 +6,8 @@
 	import flash.media.*;
 	import flash.utils.*;
 	
-	import pro.creatida.MediaBase;
-	import pro.creatida.PlayerState;
+	import com.creatida.MediaBase;
+	import com.creatida.PlayerState;
 	import com.greensock.easing.Ease;
 	
 

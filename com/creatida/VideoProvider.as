@@ -1,4 +1,4 @@
-﻿package pro.creatida
+﻿package com.creatida
 {
 
 	import flash.display.*;
@@ -6,7 +6,7 @@
 	import flash.net.*;
 	import flash.media.*;
 	import flash.utils.*;	
-	import pro.creatida.MediaBase;
+	import com.creatida.MediaBase;
 	
 	/* Обычное видео */
 	public class VideoProvider extends MediaBase 

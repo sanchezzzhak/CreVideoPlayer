@@ -1,4 +1,4 @@
-﻿package pro.creatida
+﻿package com.creatida
 {
 	
 	import flash.display.*;
@@ -7,9 +7,9 @@
 	import flash.media.*;
 	import flash.utils.*;	
 	
-	import pro.creatida.MediaBase;
-	import pro.creatida.PlayerState;
-	import pro.creatida.NetClient;
+	import com.creatida.MediaBase;
+	import com.creatida.PlayerState;
+	import com.creatida.NetClient;
 	
 
 	public class RTMPProvider extends MediaBase {

@@ -1,4 +1,4 @@
-﻿﻿package pro.creatida { 
+﻿﻿package com.creatida { 
 	
 	/**
 	 * Статусы плеира 

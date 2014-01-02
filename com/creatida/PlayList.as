@@ -1,7 +1,7 @@
-﻿package pro.creatida 
+﻿package com.creatida 
 {
 	import flash.utils.*;
-	import pro.creatida.PlayListItem;
+	import com.creatida.PlayListItem;
 
 	public class PlayList
 	{
