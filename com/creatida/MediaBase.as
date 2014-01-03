@@ -57,9 +57,7 @@ package com.creatida {
 			this._offest = arg1;
 		}
 		public function mute(arg1:Boolean):void{}
-		public function getPosition():Number{ return this.pos;} 
-
-		
+		public function getPosition():Number{ return this.pos;}
 		
 	}
 }

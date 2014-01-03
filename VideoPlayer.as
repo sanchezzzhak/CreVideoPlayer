@@ -1,8 +1,5 @@
 ﻿package
 {
-	
-	
-
 
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
@@ -68,7 +65,6 @@
 		
 		private var _conteiners:Array = new Array;
 		
-		
 		public static function dump(array):void {
 			for (var t:Object in array)
 			{
@@ -80,8 +76,7 @@
 		
 		/* ==== ] S K I N ==== */
 		
-		
-		
+	
 		/* Base init */
 		public function VideoPlayer()
 		{
@@ -125,10 +120,8 @@
 				case 'mov': 
 				case 'flv': 
 				case 'mp4': 
-					
 					var play_item:PlayListItem = new PlayListItem;
 						play_item.file = videos_url;
-						
 					this._playlist.insert(play_item);
 					this._current = play_item; 
 					break;

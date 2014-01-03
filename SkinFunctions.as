@@ -1,11 +1,14 @@
 	import flash.display.*;
 	import flash.events.*;
 	
-	
 	private var play_btn_press:Sprite = new Sprite;
 	private var play_btn_out  :Sprite = new Sprite;
 	private var play_btn_over :Sprite = new Sprite;
 	private var play_btn:SimpleButton = new SimpleButton;
+	
+	private var logo:MovieClip = new MovieClip;
+	
+	
 	/**
 	 * 
 	 * @param	e
@@ -23,7 +26,7 @@
 		}
 	}
 	
-	private var center_btn_play:MovieClip = new MovieClip;
+	private var center_btn_play:MovieClip  = new MovieClip;
 	private var center_btn_pause:MovieClip = new MovieClip;
 	/**
 	 * 
@@ -102,7 +105,6 @@
 		}
 	}
 	
-	
 	/**
 	 * 
 	 * @param	e
@@ -116,11 +118,9 @@
 				trace('asset loader ', this._loader_arr[index].name );
 				this._loader_arr[index].is_load = true;
 				
-				var loader:Loader = e.target.loader as Loader; 
-					loader.x = 0;
-					loader.y = 0;
-				
-				switch(this._loader_arr[index].name)
+				var loader:Loader = e.target.loader as Loader; 	
+				var name:String = this._loader_arr[index].name;
+				switch(name)
 				{
 					case 'center_btn_play':
 						loader.width  = this._controls_params.center_btn.width;
@@ -161,36 +161,27 @@
 							this.onCenterPause
 						);
 						break;
-					//PLAY	
+						
+					// PLAY	
 					case 'play_btn_out':
-						this.play_btn_out.addChild(loader);
-						break;
 					case 'play_btn_press':
-						this.play_btn_press.addChild(loader);
-						break;
 					case 'play_btn_over':
-						this.play_btn_over.addChild(loader);
-						break;
+						
 					// PAUSE	
 					case 'pause_btn_out':
-						this.pause_btn_out.addChild(loader);
-						break;
 					case 'pause_btn_press':
-						this.pause_btn_press.addChild(loader);
-						break;
 					case 'pause_btn_over':
-						this.pause_btn_over.addChild(loader);
-						break;	
+
 					// STOP
 					case 'stop_btn_out':
-						this.stop_btn_out.addChild(loader);
-						break;
 					case 'stop_btn_press':
-						this.stop_btn_press.addChild(loader);
-						break;
 					case 'stop_btn_over':
-						this.stop_btn_over.addChild(loader);
-						break;	
+						this.prop(name).addChild(loader);
+					break;
+						
+					case 'logo':
+						this.prop(name).addChild(loader);
+					break;
 						
 					
 				}
@@ -199,11 +190,10 @@
 		};
 	}
 	
-
-	
-	
 	public function xmlSkinParse(assets:XMLList, name_conteiner:String = '' ):void
 	{
+		var default_btn:Array = new Array('play_btn','pause_btn','stop_btn');
+
 		for each (var asset in assets)
 		{
 			var name:String = asset.name().toString();
@@ -216,6 +206,7 @@
 			{
 				attr_arr['conteiner'] = name_conteiner;
 			}
+			
 			this._controls_params[name] = attr_arr;
 			
 			// Прелойдер
@@ -239,92 +230,97 @@
 				continue;
 			}
 			
+			// кнопка по центру 
 			if (name == 'center_btn')
 			{
 				pushLoader(name + '_play',  asset.@play);
 				pushLoader(name + '_pause', asset.@pause);
+				
 				continue;
 			}
 			
-			if (name == 'play_btn')
+			// Кнопки 
+			if (this.in_array(name, default_btn) && this.has(name) )
 			{
 				this.pushLoader(name + '_over',  asset.@over);
 				this.pushLoader(name + '_press', asset.@press);
 				this.pushLoader(name + '_out', asset.@out);
+
+				this.prop(name).name = name;
+				this.prop(name).downState    = this.prop(name + '_press');
+				this.prop(name).overState    = this.prop(name + '_over');
+				this.prop(name).upState      = this.prop(name + '_out');
+				this.prop(name).hitTestState = this.prop(name + '_out');
 				
-				this.play_btn.name = name;
-				this.play_btn.downState    = this.play_btn_press;
-				this.play_btn.overState    = this.play_btn_over;
-				this.play_btn.upState      = this.play_btn_out;
-				this.play_btn.hitTestState = this.play_btn_out;
-				
-				this.play_btn.addEventListener(MouseEvent.CLICK, this.onPlayBtn);
-				
-				if (_controls_params[name].hasOwnProperty('conteiner'))
+				this.setSkinParams( this.prop(name) ,this._controls_params[name]);
+				//this.prop(name).addEventListener(MouseEvent.CLICK, this.onPlayBtn);
+				if (this._controls_params[name].hasOwnProperty('conteiner'))
 				{
-					addChild(this.play_btn);
+					addChild( this.prop(name) );
 					//this._conteiners[name].addChild(this.play_btn);
 				}else
 				{
+					//this._controlerLayer.addChild( this.prop(name) );
 					
 				};
 				continue;
 			}
-			
-			if (name == 'pause_btn')
-			{
-				this.pushLoader(name + '_over',  asset.@over);
-				this.pushLoader(name + '_press', asset.@press);
-				this.pushLoader(name + '_out', asset.@out);
-				
-				this.pause_btn.name = name;
-				this.pause_btn.downState    = this.pause_btn_press;
-				this.pause_btn.overState    = this.pause_btn_over;
-				this.pause_btn.upState      = this.pause_btn_out;
-				this.pause_btn.hitTestState = this.pause_btn_out;
-				
-				this.pause_btn.addEventListener(MouseEvent.CLICK, this.onPauseBtn);
-				
-				if (_controls_params[name].hasOwnProperty('conteiner'))
-				{
-					addChild(this.pause_btn);
-					//this._conteiners[name].addChild(this.play_btn);
-				}else
-				{
-					
-				};
-				continue;
-			}	
-			
-			
-			if (name == 'stop_btn')
-			{
-				this.pushLoader(name + '_over',  asset.@over);
-				this.pushLoader(name + '_press', asset.@press);
-				this.pushLoader(name + '_out', asset.@out);
-				
-				this.stop_btn.name = name;
-				this.stop_btn.downState    = this.stop_btn_press;
-				this.stop_btn.overState    = this.stop_btn_over;
-				this.stop_btn.upState      = this.stop_btn_out;
-				this.stop_btn.hitTestState = this.stop_btn_out;
-				
-				this.stop_btn.addEventListener(MouseEvent.CLICK, this.onStopBtn);
-				
-				if (_controls_params[name].hasOwnProperty('conteiner'))
-				{
-					addChild(this.pause_btn);
-					//this._conteiners[name].addChild(this.play_btn);
-				}else
-				{
-					
-				};
-				continue;
-			}
-			
 			
 		}
 		
 	}
+	
+	/**
+	 * 
+	 * @param	obj
+	 * @param	attr
+	 */
+	public function setSkinParams(obj, attr:Array):void
+	{
+		if (attr.hasOwnProperty('width')) {  
+			obj.width = attr.width; 
+		}
+		if (attr.hasOwnProperty('height')) { 
+			obj.height = attr.height;
+		}
+		if (attr.hasOwnProperty('x')) {
+			obj.x = attr.x;
+		}
+		if (attr.hasOwnProperty('y')) {
+			obj.y = attr.y;
+		}
+	}
+	
+	/**
+	 * Проверка если свойство или функция 
+	 * @param	prop
+	 */
+	public function has(prop:String):Boolean { 
+		try 
+		{ 
+			this[prop] 
+			return true; 
+		} catch (e:Error){};
+		
+		return false; 
+	} 
+	
+	/**
+	 * Возрашяет свойство или функцию
+	 * @param	name
+	 */
+	public function prop(name:String) { 
+		return this[name];
+	} 
+	
+	/**
+	 * 
+	 * @param	needle
+	 * @param	haystack
+	 * @return
+	 */
+	public function in_array( needle:*, haystack:Array ):Boolean {
+		return ( haystack.indexOf(needle) != -1) ? true : false;
+	} 
 	
 	
