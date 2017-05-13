@@ -11,7 +11,8 @@ var lr = require('tiny-lr'), // Минивебсервер для livereload
     uglify = require('gulp-uglify'), // Минификация JS
     concat = require('gulp-concat'), // Склейка файлов
     connect = require('connect'), // Webserver
-    server = lr();
+    server = lr(),
+    serveStatic = require('serve-static');
 
 
 // Собираем Stylus
@@ -57,12 +58,13 @@ gulp.task('images', function() {
 
 });
 
+
 // Локальный сервер для разработки
 gulp.task('http-server', function() {
-    connect()
-        .use(require('connect-livereload')())
-        .use(connect.static('./public'))
-        .listen('9600');
+    var app = connect();
+    app.use(require('connect-livereload')());
+    app.use(serveStatic('./public'));
+    app.listen('9600');
 
     console.log('Server listening on http://localhost:9600');
 });
